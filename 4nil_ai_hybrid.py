@@ -4,20 +4,18 @@ import pandas as pd
 import os
 import re
 import json
-import random
-import threading
-import subprocess
 import time
+import base64
 from gtts import gTTS
 from dotenv import load_dotenv
-from google import genai # New SDK
+from google import genai
 
 # ==========================================
 # ૧. સિસ્ટમ સેટઅપ
 # ==========================================
 load_dotenv()
 
-# Streamlit Cloud અને Local બંને માટે API Key લોજિક
+# API Key Logic (Cloud & Local)
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     api_key = st.secrets.get("GEMINI_API_KEY")
@@ -27,7 +25,7 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH SHAH", layout="wide")
 
 # ==========================================
-# ૨. એડવાન્સ ટર્મિનલ UI (Robot Look)
+# ૨. એડવાન્સ UI 
 # ==========================================
 st.markdown("""
     <style>
@@ -45,7 +43,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. એનાલિસિસ એન્જિન
+# ૩. ફંક્શન્સ (Web Voice & Data)
 # ==========================================
 
 def get_trading_signal(ticker):
@@ -64,13 +62,38 @@ def get_trading_signal(ticker):
         return {"symbol": ticker.replace(".NS", ""), "price": round(last_p, 2), "action": act, "class": cls}
     except: return None
 
+def speak_cloud(text):
+    """Cloud-Ready Browser Audio Player"""
+    try:
+        clean_text = re.sub(r'[^\w\s\.]', '', text)
+        if not clean_text: return
+        
+        # mp3 ફાઈલ બનાવો
+        tts = gTTS(text=clean_text, lang='gu')
+        tts.save("voice.mp3")
+        
+        # બ્રાઉઝરમાં પ્લે કરવા માટે HTML Audio 
+        with open("voice.mp3", "rb") as f:
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            audio_html = f'''
+                <audio autoplay="true" style="display:none;">
+                    <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+                </audio>
+            '''
+            st.markdown(audio_html, unsafe_allow_html=True)
+            
+        os.remove("voice.mp3")
+    except Exception as e:
+        print(f"Audio Error: {e}")
+
 # ==========================================
-# ૪. UI Layout
+# ૪. ડેશબોર્ડ લેઆઉટ
 # ==========================================
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v14.6 [Model Fixed]")
+    st.write("🤖 v15.0 [Cloud Master]")
     st.markdown("---")
     if st.button("RESCAN SYSTEM"): st.rerun()
 
@@ -109,12 +132,20 @@ with right:
         
         with chat_box.chat_message("assistant"):
             try:
-                # 💡 મોડેલનું નામ સુધારેલું: gemini-3.1-flash-lite-preview
                 res = client.models.generate_content(
                     model="gemini-3.1-flash-lite-preview",
                     contents=f"User: {pr}. Answer in Gujarati briefly. Focus on Infosys/Stocks. Owner: Nilesh Shah."
                 )
-                st.markdown(res.text)
-                st.session_state.messages.append({"role": "assistant", "content": res.text})
+                
+                # 💡 જો સર્વર ખાલી રિસ્પોન્સ આપે તો ચેક કરવાનું લોજિક
+                if res and res.text:
+                    reply = res.text
+                else:
+                    reply = "માફ કરજો, સર્વરમાંથી કોઈ જવાબ મળ્યો નથી. ફરીથી પૂછો."
+                    
+                st.markdown(reply)
+                speak_cloud(reply) # નવો વેબ ઓડિયો પ્લેયર
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                
             except Exception as e:
                 st.error(f"Engine Error: {e}")
