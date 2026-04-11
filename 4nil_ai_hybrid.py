@@ -2,6 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import os
+import time
 from dotenv import load_dotenv
 from google import genai
 
@@ -37,8 +38,6 @@ st.markdown("""
     .f-o-table td { padding: 2px 4px; border-bottom: 1px solid #1a1a1a; }
     
     .sector-header { background: #1a1a1a !important; color: #d4af37 !important; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: left !important; font-size: 0.85em; border-left: 2px solid #d4af37; padding: 4px 8px !important; }
-    
-    /* 💡 ક્રિપ્ટો ટેબલ માટે સ્પેશિયલ હેડર */
     .crypto-header { background: #1a1a1a !important; color: #f7931a !important; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: left !important; font-size: 0.85em; border-left: 2px solid #f7931a; padding: 4px 8px !important; }
     
     .sector-summary { font-family: 'Roboto Mono', sans-serif; font-size: 0.9em; font-weight: normal; float: right; color: #aaa; }
@@ -54,17 +53,19 @@ st.markdown("""
     .neutral { background-color: #555; color: #fff; }
     
     h1, h2, h3, h4 { font-family: 'Orbitron', sans-serif; color: #d4af37 !important; margin-bottom: 5px; padding: 0; }
+    
+    /* નવું લાઈવ સ્ટેટસ બટન */
+    .live-badge { text-align: center; padding: 10px; background-color: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; border-radius: 5px; color: #00ff00; font-weight: bold; font-family: 'Orbitron', sans-serif; margin-top: 20px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. માર્કેટ એન્જિન (ફાસ્ટ ક્રિપ્ટો સપોર્ટ સાથે)
+# ૩. માર્કેટ એન્જિન (15 સેકન્ડ લાઈવ કેશ)
 # ==========================================
-@st.cache_data(ttl=15) # 15 સેકન્ડની સ્પીડ લાઈવ ટેસ્ટિંગ માટે
+@st.cache_data(ttl=15)
 def get_terminal_data(ticker):
     try:
         ticker = ticker.strip().upper()
-        # 💡 જો પાછળ -USD હોય, તો .NS નહિ લગાવવાનું
         if not ticker.endswith('.NS') and not ticker.startswith('^') and not ticker.endswith('-USD'): 
             ticker += '.NS'
             
@@ -103,11 +104,11 @@ def get_terminal_data(ticker):
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v16.7 [Live Tester]")
+    st.write("🤖 v16.8 [True Live Edition]")
     st.markdown("---")
-    if st.button("RESCAN TERMINAL"): 
-        st.cache_data.clear() 
-        st.rerun()
+    
+    # 💡 બટન કાઢીને લાઈવ સ્ટેટસ ઇન્ડિકેટર મૂકી દીધું
+    st.markdown("<div class='live-badge'>🟢 SYSTEM LIVE <br><small>AUTO-SYNC ON</small></div>", unsafe_allow_html=True)
 
 # --- SCROLLING TICKER ---
 nifty = get_terminal_data('^NSEI')
@@ -123,11 +124,10 @@ st.markdown(ticker_html, unsafe_allow_html=True)
 
 left, right = st.columns([1.8, 1])
 
-# --- ડાબી બાજુ: રડાર અને નવું ક્રિપ્ટો ટેબલ ---
+# --- ડાબી બાજુ: રડાર અને ક્રિપ્ટો ટેબલ ---
 with left:
     st.markdown("<h4>📡 F&O SECTOR RADAR</h4>", unsafe_allow_html=True)
     
-    # જૂનું ઇન્ડિયન માર્કેટનું ગ્રીડ (જેમ હતું તેમ જ)
     fo_sectors = {
         "IT": ['INFY', 'TCS', 'WIPRO', 'HCLTECH', 'TECHM'],
         "BANKING": ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK', 'KOTAKBANK'],
@@ -161,7 +161,6 @@ with left:
         html += header_html + rows_html + "</tbody></table>"
         return html
 
-    # F&O ગ્રીડ પ્રિન્ટિંગ
     sectors = list(fo_sectors.items())
     half = len(sectors) // 2
     grid_html = "<div class='radar-grid'><div>"
@@ -173,7 +172,6 @@ with left:
     grid_html += "</div></div>"
     st.markdown(grid_html, unsafe_allow_html=True)
     
-    # 💡 નવું: ક્રિપ્ટો માટે અલગથી ફુલ-વિડ્થ ટેબલ (ટેસ્ટિંગ માટે)
     st.markdown("<h4 style='margin-top:15px; color:#f7931a;'>🪙 24x7 CRYPTO TEST BED</h4>", unsafe_allow_html=True)
     crypto_list = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD', 'XRP-USD']
     st.markdown(build_table("HIGH VOLUME CRYPTO", crypto_list, is_crypto=True), unsafe_allow_html=True)
@@ -187,7 +185,7 @@ with right:
     for m in st.session_state.messages[-10:]:
         with chat_box.chat_message(m["role"]): st.markdown(m["content"])
 
-    if pr := st.chat_input("ટાર્ગેટ પૂછો (દા.ત. BTC target)..."):
+    if pr := st.chat_input("ટાર્ગેટ પૂછો..."):
         st.session_state.messages.append({"role": "user", "content": pr})
         with chat_box.chat_message("user"): st.markdown(pr)
         
@@ -211,3 +209,10 @@ with right:
                 st.session_state.messages.append({"role": "assistant", "content": reply})
             except Exception as e:
                 st.error(f"Engine Error: {e}")
+
+# ==========================================
+# ૫. ઓટો-રિફ્રેશ એન્જિન (Auto-Reload)
+# ==========================================
+# 💡 આ કોડની જાદુઈ લાઈન: દર 15 સેકન્ડે પેજ પોતાની જાતે નવો ડેટા ખેંચી લાવશે
+time.sleep(15)
+st.rerun()
