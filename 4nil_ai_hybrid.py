@@ -2,9 +2,6 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import os
-import re
-import base64
-from gtts import gTTS
 from dotenv import load_dotenv
 from google import genai
 
@@ -22,7 +19,7 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH SHAH", layout="wide")
 
 # ==========================================
-# ૨. એડવાન્સ UI 
+# ૨. એડવાન્સ UI (Clear Text & Dark Mode)
 # ==========================================
 st.markdown("""
     <style>
@@ -42,7 +39,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. પાવરફુલ ફંક્શન્સ 
+# ૩. પાવરફુલ માર્કેટ એન્જિન
 # ==========================================
 
 def get_trading_signal(ticker):
@@ -64,27 +61,13 @@ def get_trading_signal(ticker):
         return {"symbol": ticker.replace(".NS", ""), "price": round(last_p, 2), "action": act, "class": cls}
     except: return None
 
-def speak_gtts_cloud(text):
-    try:
-        clean_text = re.sub(r'[^\w\s\.,]', '', text)
-        if not clean_text: return
-        tts = gTTS(text=clean_text, lang='gu')
-        tts.save("voice.mp3")
-        with open("voice.mp3", "rb") as f:
-            data = f.read()
-            b64 = base64.b64encode(data).decode()
-            audio_html = f'<audio autoplay="true" style="display:none;"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'
-            st.markdown(audio_html, unsafe_allow_html=True)
-        os.remove("voice.mp3")
-    except: pass
-
 # ==========================================
 # ૪. ડેશબોર્ડ લેઆઉટ
 # ==========================================
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v15.6 [Memory Engine]")
+    st.write("🤖 v15.8 [Silent Broker]")
     st.markdown("---")
     if st.button("RESCAN SYSTEM"): st.rerun()
 
@@ -119,37 +102,46 @@ with right:
     if "messages" not in st.session_state: st.session_state.messages = []
     
     chat_box = st.container(height=400)
-    for m in st.session_state.state_messages if "state_messages" in st.session_state else st.session_state.messages:
+    for m in st.session_state.messages[-10:]: # છેલ્લી 10 ચેટ જ બતાવશે
         with chat_box.chat_message(m["role"]): st.markdown(m["content"])
 
-    if pr := st.chat_input("સવાલ પૂછો..."):
+    if pr := st.chat_input("ટાર્ગેટ કે લેવલ પૂછો..."):
         st.session_state.messages.append({"role": "user", "content": pr})
         with chat_box.chat_message("user"): st.markdown(pr)
         
         with chat_box.chat_message("assistant"):
             try:
-                # 💡 ફિક્સ ૧: મેમરી લોડ કરવી (છેલ્લા ૫ મેસેજ યાદ રાખશે)
+                # મેમરી સેટઅપ
                 memory_string = ""
-                for msg in st.session_state.messages[-6:]:
+                for msg in st.session_state.messages[-4:]:
                     memory_string += f"{msg['role']}: {msg['content']}\n"
                 
                 market_status = " | ".join(live_context_data)
                 
-                # 💡 ફિક્સ ૨: એડવાન્સ કડક કમાન્ડ
+                # દેશી બ્રોકર સ્ક્રિપ્ટ
                 ai_prompt = f"""
-                તમે નિલેશ શાહ ના પર્સનલ શેરબજાર બ્રોકર 'ABNV Bot' છો. 
+                માલિક: નિલેશ શાહ. 
+                માર્કેટ ડેટા: {market_status}
                 
-                લાઇવ માર્કેટ ડેટા: {market_status}. (જવાબમાં આ જ ભાવ આપવા, બીજા નહિ).
+                તમારે નીચે આપેલા ઉદાહરણ પ્રમાણે જ એકદમ દેશી, ટૂંકો અને સીધો જવાબ આપવાનો છે. 
+                'આશરે', 'વિશ્લેષણ', 'સંભાવના', 'રિપોર્ટ' જેવા ચોપડીના શબ્દો બિલકુલ ન વાપરતા. માત્ર 1 જ લાઈનમાં જવાબ આપવો.
                 
-                અત્યાર સુધીની વાતચીત (યાદ રાખવા માટે):
-                {memory_string}
+                ઉદાહરણ 1:
+                User: infosys target
+                Assistant: નિલેશભાઈ, ઇન્ફોસિસ અત્યારે 1292 રૂપિયા છે, માર્કેટમાં તેજી છે, 1310 નો ટાર્ગેટ રાખો.
                 
-                તમારા માટે કડક નિયમો:
-                ૧. ઓફિસના કે સેલ્સના ટાર્ગેટની વાત બિલકુલ નહિ કરવાની. માત્ર શેરબજારના જ ટાર્ગેટ આપવાના.
-                ૨. જો નિલેશભાઈ ટૂંકમાં પૂછે "ટાર્ગેટ જણાવો", તો ઉપરની 'વાતચીત' વાંચીને સમજવું કે કયા શેરની વાત ચાલે છે.
-                ૩. એકદમ ટૂંકી, દેશી અને સીધી ભાષા વાપરવી. 'આશરે', 'સંભાવના', 'વિશ્લેષણ' જેવા શબ્દો વાપરવા પર પ્રતિબંધ છે.
-                ૪. માત્ર ૧ જ લીટીમાં જવાબ આપવો.
-                ૫. ઉદાહરણ: "નિલેશભાઈ, ઇન્ફોસિસ અત્યારે ૧૨૯૨ છે, ખરીદાય એવો છે, ટાર્ગેટ ૧૩૧૦ રાખો."
+                ઉદાહરણ 2:
+                User: tcs levay?
+                Assistant: ના નિલેશભાઈ, ટીસીએસ માં અત્યારે મંદી દેખાય છે, 2524 રૂપિયા ભાવ છે, અત્યારે રહેવા દો.
+                
+                ઉદાહરણ 3:
+                User: reliance no bhav
+                Assistant: રિલાયન્સ અત્યારે 1350 રૂપિયા છે નિલેશભાઈ, કોઈ મુવમેન્ટ નથી.
+                
+                હવે આ સવાલનો જવાબ આપો:
+                વાતચીતનો ઇતિહાસ: {memory_string}
+                User: {pr}
+                Assistant: 
                 """
                 
                 res = client.models.generate_content(
@@ -157,13 +149,10 @@ with right:
                     contents=ai_prompt
                 )
                 
-                reply = res.text if (res and res.text) else "સર્વરમાં લોચો છે."
+                reply = res.text.replace("Assistant:", "").strip() if (res and res.text) else "સર્વરમાં લોચો છે."
                 st.markdown(reply)
                 
-                # અવાજને સાદો કરવા
-                voice_text = reply.replace("₹", " રૂપિયા ").replace("%", " ટકા ")
-                speak_gtts_cloud(voice_text)
-                
+                # 💡 વૉઇસ કાઢી નાખ્યો છે, સીધો જ રિપ્લે સેવ થશે
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 
             except Exception as e:
