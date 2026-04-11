@@ -15,7 +15,7 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH SHAH", layout="wide")
 
 # ==========================================
-# ૨. સાયબર-ગોલ્ડ રોબોટિક UI
+# ૨. સાયબર-ગોલ્ડ રોબોટિક UI & Scrolling Ticker
 # ==========================================
 st.markdown("""
     <style>
@@ -23,26 +23,37 @@ st.markdown("""
     .stApp { background-color: #050505; }
     [data-testid="stSidebar"] { background-color: #0a0a0a !important; border-right: 1px solid #d4af37; }
     
+    /* 💡 સ્કોલિંગ ટિકર (ઉપર ફરતી પટ્ટી) ની ડિઝાઇન */
+    .ticker-wrap { width: 100%; overflow: hidden; background-color: #111; border-bottom: 2px solid #d4af37; padding: 10px 0; margin-bottom: 20px; }
+    .ticker { display: inline-block; white-space: nowrap; padding-right: 100%; animation: ticker 25s linear infinite; }
+    @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+    .ticker-item { display: inline-block; padding: 0 2rem; font-family: 'Orbitron', sans-serif; font-size: 1.2em; font-weight: bold; }
+    .t-up { color: #00ff00; } .t-down { color: #ff4b4b; } .t-title { color: #d4af37; }
+    
+    /* સેક્ટર વાઈઝ ટેબલ */
     .f-o-table { width: 100%; border-collapse: collapse; color: white; font-family: 'Roboto Mono', sans-serif; }
     .f-o-table th { background: #111; color: #d4af37; padding: 12px; text-align: left; border-bottom: 2px solid #d4af37; font-family: 'Orbitron', sans-serif; }
-    .f-o-table td { padding: 12px; border-bottom: 1px solid rgba(212, 175, 55, 0.1); }
+    .f-o-table td { padding: 10px 12px; border-bottom: 1px solid rgba(212, 175, 55, 0.1); }
+    
+    /* સેક્ટર હેડિંગ માટે ગોલ્ડ પટ્ટી */
+    .sector-header { background: #d4af37 !important; color: #000 !important; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: center !important; font-size: 1.1em; letter-spacing: 2px; }
     
     .stChatMessage { background: #151515 !important; border-left: 3px solid #d4af37 !important; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-    .stChatMessage p { color: #ffffff !important; font-size: 1.1em; font-family: 'Roboto Mono', sans-serif; line-height: 1.6; }
+    .stChatMessage p { color: #ffffff !important; font-size: 1.1em; font-family: 'Roboto Mono', sans-serif; }
     
     .action-badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.8em; }
-    .buy { background-color: #00ff00; color: #000; box-shadow: 0 0 10px #00ff00; }
-    .sell { background-color: #ff0000; color: #fff; box-shadow: 0 0 10px #ff0000; }
-    .neutral { background-color: #555; color: #fff; }
+    .buy { background-color: #00ff00; color: #000; box-shadow: 0 0 8px #00ff00; }
+    .sell { background-color: #ff0000; color: #fff; box-shadow: 0 0 8px #ff0000; }
     
     h1, h2, h3, h4 { font-family: 'Orbitron', sans-serif; color: #d4af37 !important; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. પાવરફુલ માર્કેટ એન્જિન
+# ૩. સુપરફાસ્ટ માર્કેટ એન્જિન (With Cache)
 # ==========================================
-
+# 💡 ડેટા દર 60 સેકન્ડે જ નવો આવશે, જેથી એપ હેંગ ના થાય
+@st.cache_data(ttl=60)
 def get_terminal_data(ticker):
     try:
         ticker = ticker.strip().upper()
@@ -52,12 +63,18 @@ def get_terminal_data(ticker):
         if df.empty: return None
         
         last = df.iloc[-1]
+        prev_close = df.iloc[-2]['Close'] if len(df) > 1 else last['Open']
         
+        # BUY/SELL Logic
         ema_data = t.history(period="1mo", interval="1d")
         ema20 = ema_data['Close'].ewm(span=20, adjust=False).mean().iloc[-1]
         
         if last['Close'] > ema20: act, cls = "BUY", "buy"
         else: act, cls = "SELL", "sell"
+        
+        # ટિકરના કલર માટે ગ્રીન/રેડ નક્કી કરવું
+        trend_class = "t-up" if last['Close'] >= prev_close else "t-down"
+        arrow = "▲" if last['Close'] >= prev_close else "▼"
         
         return {
             "Symbol": ticker.replace(".NS", ""),
@@ -66,7 +83,9 @@ def get_terminal_data(ticker):
             "High": round(last['High'], 2),
             "Low": round(last['Low'], 2),
             "Signal": act,
-            "Class": cls
+            "Class": cls,
+            "Trend_Class": trend_class,
+            "Arrow": arrow
         }
     except: return None
 
@@ -76,41 +95,57 @@ def get_terminal_data(ticker):
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v16.1 [UI Fixed]")
+    st.write("🤖 v16.2 [Live Radar]")
     st.markdown("---")
-    if st.button("RESCAN TERMINAL"): st.rerun()
+    if st.button("RESCAN TERMINAL"): 
+        st.cache_data.clear() # Cache સાફ કરવા બટન
+        st.rerun()
 
-st.title("🔱 ABNV MASTER TERMINAL")
-
+# --- TOP SCROLLING TICKER (લગાતાર ફરતી પટ્ટી) ---
 nifty = get_terminal_data('^NSEI')
 banknifty = get_terminal_data('^NSEBANK')
-c1, c2 = st.columns(2)
-if nifty: c1.metric("NIFTY 50", f"₹{nifty['Price']}", nifty['Signal'])
-if banknifty: c2.metric("BANK NIFTY", f"₹{banknifty['Price']}", banknifty['Signal'])
+sensex = get_terminal_data('^BSESN')
 
-st.markdown("---")
+ticker_html = "<div class='ticker-wrap'><div class='ticker'>"
+if nifty: ticker_html += f"<div class='ticker-item'><span class='t-title'>NIFTY 50:</span> <span class='{nifty['Trend_Class']}'>{nifty['Price']} {nifty['Arrow']}</span></div>"
+if banknifty: ticker_html += f"<div class='ticker-item'><span class='t-title'>BANK NIFTY:</span> <span class='{banknifty['Trend_Class']}'>{banknifty['Price']} {banknifty['Arrow']}</span></div>"
+if sensex: ticker_html += f"<div class='ticker-item'><span class='t-title'>SENSEX:</span> <span class='{sensex['Trend_Class']}'>{sensex['Price']} {sensex['Arrow']}</span></div>"
+ticker_html += "</div></div>"
 
-left, right = st.columns([1.5, 1])
+st.markdown(ticker_html, unsafe_allow_html=True)
 
-# --- ડાબી બાજુ: લાઈવ ટેબલ ---
+# ------------------------------------------------
+
+left, right = st.columns([1.6, 1])
+
+# --- ડાબી બાજુ: સેક્ટર વાઈઝ લાઈવ ટેબલ ---
 with left:
-    st.subheader("📡 F&O LIVE RADAR")
-    watchlist = ['RELIANCE', 'INFY', 'TCS', 'HDFCBANK', 'ZOMATO', 'DIXON', 'TATAMOTORS', 'ICICIBANK']
-    all_data = []
+    st.subheader("📡 F&O SECTOR RADAR")
+    
+    # 💡 અહીં તમે તમારી રીતે સ્ટોક્સ ઉમેરી શકો છો
+    fo_sectors = {
+        "IT SECTOR": ['INFY', 'TCS', 'WIPRO', 'HCLTECH'],
+        "BANKING & FINANCE": ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK'],
+        "AUTO SECTOR": ['TATAMOTORS', 'M&M', 'MARUTI', 'BAJAJ-AUTO'],
+        "ENERGY & OIL": ['RELIANCE', 'ONGC', 'NTPC', 'POWERGRID'],
+        "FMCG": ['ITC', 'HUL', 'BRITANNIA', 'TATACONSUM']
+    }
+    
     live_context_data = []
 
-    for s in watchlist:
-        data = get_terminal_data(s)
-        if data: 
-            all_data.append(data)
-            live_context_data.append(f"{data['Symbol']}: {data['Price']} ({data['Signal']})")
-
-    # 💡 ફિક્સ: સળંગ લાઈનમાં HTML જેથી Streamlit ગોથા ના ખાય
     table_html = "<table class='f-o-table'><thead><tr><th>SYMBOL</th><th>PRICE</th><th>OPEN</th><th>HIGH</th><th>LOW</th><th>SIGNAL</th></tr></thead><tbody>"
-    for d in all_data:
-        table_html += f"<tr><td style='color:#d4af37; font-weight:bold;'>{d['Symbol']}</td><td>₹{d['Price']}</td><td style='color:#888;'>{d['Open']}</td><td style='color:#00ff00;'>{d['High']}</td><td style='color:#ff4b4b;'>{d['Low']}</td><td><span class='action-badge {d['Class']}'>{d['Signal']}</span></td></tr>"
+    
+    for sector, stocks in fo_sectors.items():
+        # સેક્ટરનું ગોલ્ડ હેડિંગ
+        table_html += f"<tr><td colspan='6' class='sector-header'>{sector}</td></tr>"
+        
+        for s in stocks:
+            d = get_terminal_data(s)
+            if d: 
+                live_context_data.append(f"{d['Symbol']}: {d['Price']} ({d['Signal']})")
+                table_html += f"<tr><td style='color:#ffffff; font-weight:bold;'>{d['Symbol']}</td><td>₹{d['Price']}</td><td style='color:#888;'>{d['Open']}</td><td style='color:#00ff00;'>{d['High']}</td><td style='color:#ff4b4b;'>{d['Low']}</td><td><span class='action-badge {d['Class']}'>{d['Signal']}</span></td></tr>"
+                
     table_html += "</tbody></table>"
-
     st.markdown(table_html, unsafe_allow_html=True)
 
 # --- જમણી બાજુ: દેશી બ્રોકર AI ---
@@ -118,7 +153,7 @@ with right:
     st.subheader("🤖 COMMAND CORE")
     if "messages" not in st.session_state: st.session_state.messages = []
     
-    chat_box = st.container(height=500)
+    chat_box = st.container(height=550)
     for m in st.session_state.messages[-10:]:
         with chat_box.chat_message(m["role"]): st.markdown(m["content"])
 
@@ -135,8 +170,7 @@ with right:
                 માલિક: નિલેશ શાહ. 
                 માર્કેટ ડેટા: {market_status}
                 
-                તમારે નીચે આપેલા ઉદાહરણ પ્રમાણે જ એકદમ દેશી, ટૂંકો અને સીધો જવાબ આપવાનો છે. 
-                'આશરે', 'વિશ્લેષણ', 'સંભાવના', 'રિપોર્ટ' જેવા ચોપડીના શબ્દો બિલકુલ ન વાપરતા. માત્ર 1 જ લાઈનમાં જવાબ આપવો.
+                તમારે નીચે આપેલા ઉદાહરણ પ્રમાણે જ એકદમ દેશી, ટૂંકો અને સીધો જવાબ આપવાનો છે. માત્ર 1 જ લાઈનમાં જવાબ આપવો.
                 
                 ઉદાહરણ 1:
                 User: infosys target
