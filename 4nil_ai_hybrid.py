@@ -3,7 +3,6 @@ import yfinance as yf
 import pandas as pd
 import os
 import re
-import json
 import base64
 from gtts import gTTS
 from dotenv import load_dotenv
@@ -23,7 +22,7 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH SHAH", layout="wide")
 
 # ==========================================
-# ૨. એડવાન્સ UI (Clear Vision)
+# ૨. એડવાન્સ UI 
 # ==========================================
 st.markdown("""
     <style>
@@ -43,7 +42,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. પાવરફુલ ફંક્શન્સ (Fixes Applied)
+# ૩. પાવરફુલ ફંક્શન્સ 
 # ==========================================
 
 def get_trading_signal(ticker):
@@ -51,9 +50,7 @@ def get_trading_signal(ticker):
         ticker = ticker.strip().upper()
         if not ticker.endswith('.NS') and not ticker.startswith('^'): ticker += '.NS'
         t = yf.Ticker(ticker)
-        
-        # 💡 ફિક્સ ૧: 1h કાઢીને 1d કર્યું. હવે ભાવ એકદમ સચોટ આવશે.
-        df = t.history(period="1mo", interval="1d")
+        df = t.history(period="1mo", interval="1d") 
         if df.empty: return None
         
         last_p = df['Close'].iloc[-1]
@@ -68,22 +65,16 @@ def get_trading_signal(ticker):
     except: return None
 
 def speak_gtts_cloud(text):
-    """
-    💡 ફિક્સ ૨: જૂનો ભરોસાપાત્ર gTTS અવાજ, જે ક્લાઉડ પર કામ કરશે અને ગુજરાતી આંકડા જ બોલશે.
-    """
     try:
         clean_text = re.sub(r'[^\w\s\.,]', '', text)
         if not clean_text: return
-        
         tts = gTTS(text=clean_text, lang='gu')
         tts.save("voice.mp3")
-        
         with open("voice.mp3", "rb") as f:
             data = f.read()
             b64 = base64.b64encode(data).decode()
             audio_html = f'<audio autoplay="true" style="display:none;"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'
             st.markdown(audio_html, unsafe_allow_html=True)
-            
         os.remove("voice.mp3")
     except: pass
 
@@ -93,19 +84,23 @@ def speak_gtts_cloud(text):
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v15.4 [Stable Engine]")
+    st.write("🤖 v15.6 [Memory Engine]")
     st.markdown("---")
     if st.button("RESCAN SYSTEM"): st.rerun()
 
 st.markdown('<h2 style="text-align:center;">📊 TRADING TERMINAL</h2>', unsafe_allow_html=True)
+
 nifty = get_trading_signal('^NSEI')
 banknifty = get_trading_signal('^NSEBANK')
+live_context_data = []
 
 c1, c2 = st.columns(2)
-with c1:
-    if nifty: st.markdown(f'<div class="index-card">NIFTY 50<h3>₹{nifty["price"]}</h3><span class="action-badge {nifty["class"]}">{nifty["action"]}</span></div>', unsafe_allow_html=True)
-with c2:
-    if banknifty: st.markdown(f'<div class="index-card">BANK NIFTY<h3>₹{banknifty["price"]}</h3><span class="action-badge {banknifty["class"]}">{banknifty["action"]}</span></div>', unsafe_allow_html=True)
+if nifty: 
+    st.markdown(f'<div class="index-card">NIFTY 50<h3>₹{nifty["price"]}</h3><span class="action-badge {nifty["class"]}">{nifty["action"]}</span></div>', unsafe_allow_html=True)
+    live_context_data.append(f"NIFTY: ₹{nifty['price']} ({nifty['action']})")
+if banknifty: 
+    st.markdown(f'<div class="index-card">BANK NIFTY<h3>₹{banknifty["price"]}</h3><span class="action-badge {banknifty["class"]}">{banknifty["action"]}</span></div>', unsafe_allow_html=True)
+    live_context_data.append(f"BANKNIFTY: ₹{banknifty['price']} ({banknifty['action']})")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -117,13 +112,14 @@ with left:
         d = get_trading_signal(s)
         if d:
             st.markdown(f'<div class="stock-row"><b style="color:#d4af37;">{d["symbol"]}</b><span style="color:#fff;">₹{d["price"]}</span><span class="action-badge {d["class"]}">{d["action"]}</span></div>', unsafe_allow_html=True)
+            live_context_data.append(f"{d['symbol']}: ભાવ ₹{d['price']} સિગ્નલ {d['action']}")
 
 with right:
     st.markdown("<h4>🤖 COMMAND CORE</h4>", unsafe_allow_html=True)
     if "messages" not in st.session_state: st.session_state.messages = []
     
     chat_box = st.container(height=400)
-    for m in st.session_state.messages:
+    for m in st.session_state.state_messages if "state_messages" in st.session_state else st.session_state.messages:
         with chat_box.chat_message(m["role"]): st.markdown(m["content"])
 
     if pr := st.chat_input("સવાલ પૂછો..."):
@@ -132,11 +128,28 @@ with right:
         
         with chat_box.chat_message("assistant"):
             try:
+                # 💡 ફિક્સ ૧: મેમરી લોડ કરવી (છેલ્લા ૫ મેસેજ યાદ રાખશે)
+                memory_string = ""
+                for msg in st.session_state.messages[-6:]:
+                    memory_string += f"{msg['role']}: {msg['content']}\n"
+                
+                market_status = " | ".join(live_context_data)
+                
+                # 💡 ફિક્સ ૨: એડવાન્સ કડક કમાન્ડ
                 ai_prompt = f"""
-                User: {pr}. 
-                સૂચના: એકદમ ટૂંકી અને નોર્મલ ગુજરાતી બોલચાલની ભાષા વાપરો. 
-                સંસ્કૃત જેવા ભારે શબ્દો ના વાપરો. 
-                જવાબ માત્ર ૧ કે ૨ લાઈનનો જ હોવો જોઈએ. માલિક: નિલેશ શાહ.
+                તમે નિલેશ શાહ ના પર્સનલ શેરબજાર બ્રોકર 'ABNV Bot' છો. 
+                
+                લાઇવ માર્કેટ ડેટા: {market_status}. (જવાબમાં આ જ ભાવ આપવા, બીજા નહિ).
+                
+                અત્યાર સુધીની વાતચીત (યાદ રાખવા માટે):
+                {memory_string}
+                
+                તમારા માટે કડક નિયમો:
+                ૧. ઓફિસના કે સેલ્સના ટાર્ગેટની વાત બિલકુલ નહિ કરવાની. માત્ર શેરબજારના જ ટાર્ગેટ આપવાના.
+                ૨. જો નિલેશભાઈ ટૂંકમાં પૂછે "ટાર્ગેટ જણાવો", તો ઉપરની 'વાતચીત' વાંચીને સમજવું કે કયા શેરની વાત ચાલે છે.
+                ૩. એકદમ ટૂંકી, દેશી અને સીધી ભાષા વાપરવી. 'આશરે', 'સંભાવના', 'વિશ્લેષણ' જેવા શબ્દો વાપરવા પર પ્રતિબંધ છે.
+                ૪. માત્ર ૧ જ લીટીમાં જવાબ આપવો.
+                ૫. ઉદાહરણ: "નિલેશભાઈ, ઇન્ફોસિસ અત્યારે ૧૨૯૨ છે, ખરીદાય એવો છે, ટાર્ગેટ ૧૩૧૦ રાખો."
                 """
                 
                 res = client.models.generate_content(
@@ -144,10 +157,10 @@ with right:
                     contents=ai_prompt
                 )
                 
-                reply = res.text if (res and res.text) else "સર્વર બીઝી છે."
+                reply = res.text if (res and res.text) else "સર્વરમાં લોચો છે."
                 st.markdown(reply)
                 
-                # અવાજ માટે ખાસ સેટિંગ: ₹ ને 'રૂપિયા' લખી દીધું જેથી gTTS સળંગ બોલે
+                # અવાજને સાદો કરવા
                 voice_text = reply.replace("₹", " રૂપિયા ").replace("%", " ટકા ")
                 speak_gtts_cloud(voice_text)
                 
