@@ -1,10 +1,11 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import yfinance as yf
 import pandas as pd
 import os
 import re
 import json
+import base64
+from gtts import gTTS
 from dotenv import load_dotenv
 from google import genai
 
@@ -22,7 +23,7 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH SHAH", layout="wide")
 
 # ==========================================
-# ૨. એડવાન્સ UI 
+# ૨. એડવાન્સ UI (Clear Vision)
 # ==========================================
 st.markdown("""
     <style>
@@ -42,7 +43,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. પાવરફુલ ફંક્શન્સ 
+# ૩. પાવરફુલ ફંક્શન્સ (Fixes Applied)
 # ==========================================
 
 def get_trading_signal(ticker):
@@ -50,37 +51,41 @@ def get_trading_signal(ticker):
         ticker = ticker.strip().upper()
         if not ticker.endswith('.NS') and not ticker.startswith('^'): ticker += '.NS'
         t = yf.Ticker(ticker)
-        df = t.history(period="5d", interval="1h")
+        
+        # 💡 ફિક્સ ૧: 1h કાઢીને 1d કર્યું. હવે ભાવ એકદમ સચોટ આવશે.
+        df = t.history(period="1mo", interval="1d")
         if df.empty: return None
+        
         last_p = df['Close'].iloc[-1]
         ema20 = df['Close'].ewm(span=20, adjust=False).mean().iloc[-1]
         ema9 = df['Close'].ewm(span=9, adjust=False).mean().iloc[-1]
+        
         if last_p > ema20 and last_p > ema9: act, cls = "BUY", "buy"
         elif last_p < ema20 and last_p < ema9: act, cls = "SELL", "sell"
         else: act, cls = "NEUTRAL", "neutral"
+        
         return {"symbol": ticker.replace(".NS", ""), "price": round(last_p, 2), "action": act, "class": cls}
     except: return None
 
-def speak_premium(text):
+def speak_gtts_cloud(text):
     """
-    પ્રીમિયમ બ્રાઉઝર બેઝ્ડ વૉઇસ એન્જિન (No gTTS)
-    આ સીધો જ તમારા MacBook/Mobile નો નેચરલ અવાજ વાપરશે.
+    💡 ફિક્સ ૨: જૂનો ભરોસાપાત્ર gTTS અવાજ, જે ક્લાઉડ પર કામ કરશે અને ગુજરાતી આંકડા જ બોલશે.
     """
-    clean_text = re.sub(r'[^\w\s\.]', '', text).replace('\n', ' ')
-    if not clean_text: return
-    
-    # JavaScript Speech Synthesis API
-    js_code = f"""
-    <script>
-        const textToSpeak = "{clean_text}";
-        const msg = new SpeechSynthesisUtterance(textToSpeak);
-        msg.lang = 'gu-IN'; // ગુજરાતી ભાષા
-        msg.rate = 0.95; // બોલવાની સ્પીડ થોડી નોર્મલ
-        msg.pitch = 1.0; 
-        window.speechSynthesis.speak(msg);
-    </script>
-    """
-    components.html(js_code, height=0, width=0)
+    try:
+        clean_text = re.sub(r'[^\w\s\.,]', '', text)
+        if not clean_text: return
+        
+        tts = gTTS(text=clean_text, lang='gu')
+        tts.save("voice.mp3")
+        
+        with open("voice.mp3", "rb") as f:
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            audio_html = f'<audio autoplay="true" style="display:none;"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'
+            st.markdown(audio_html, unsafe_allow_html=True)
+            
+        os.remove("voice.mp3")
+    except: pass
 
 # ==========================================
 # ૪. ડેશબોર્ડ લેઆઉટ
@@ -88,7 +93,7 @@ def speak_premium(text):
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v15.3 [Premium Voice]")
+    st.write("🤖 v15.4 [Stable Engine]")
     st.markdown("---")
     if st.button("RESCAN SYSTEM"): st.rerun()
 
@@ -129,7 +134,8 @@ with right:
             try:
                 ai_prompt = f"""
                 User: {pr}. 
-                સૂચના: એકદમ સાદી ગુજરાતી ભાષા વાપરો. જાણે કોઈ અમદાવાદી મિત્ર વાત કરતો હોય.
+                સૂચના: એકદમ ટૂંકી અને નોર્મલ ગુજરાતી બોલચાલની ભાષા વાપરો. 
+                સંસ્કૃત જેવા ભારે શબ્દો ના વાપરો. 
                 જવાબ માત્ર ૧ કે ૨ લાઈનનો જ હોવો જોઈએ. માલિક: નિલેશ શાહ.
                 """
                 
@@ -141,9 +147,9 @@ with right:
                 reply = res.text if (res and res.text) else "સર્વર બીઝી છે."
                 st.markdown(reply)
                 
-                # અવાજને સ્મૂથ કરવા ચિહ્નો કાઢી નાખ્યા
-                voice_text = reply.replace("₹", "રૂપિયા ").replace("%", "ટકા ").replace("-", " માઇનસ ")
-                speak_premium(voice_text)
+                # અવાજ માટે ખાસ સેટિંગ: ₹ ને 'રૂપિયા' લખી દીધું જેથી gTTS સળંગ બોલે
+                voice_text = reply.replace("₹", " રૂપિયા ").replace("%", " ટકા ")
+                speak_gtts_cloud(voice_text)
                 
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 
