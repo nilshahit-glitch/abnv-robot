@@ -2,7 +2,6 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import os
-import time
 from dotenv import load_dotenv
 from google import genai
 
@@ -35,7 +34,7 @@ st.markdown("""
     
     .f-o-table { width: 100%; border-collapse: collapse; color: white; font-family: 'Roboto Mono', sans-serif; font-size: 0.8em; background: #0a0a0a; border: 1px solid #222; }
     .f-o-table th { background: #111; color: #d4af37; padding: 4px; text-align: left; border-bottom: 1px solid #d4af37; font-family: 'Orbitron', sans-serif; font-size: 0.85em; }
-    .f-o-table td { padding: 2px 4px; border-bottom: 1px solid #1a1a1a; }
+    .f-o-table td { padding: 2px 4px; border-bottom: 1px solid #1a1a1a; transition: background-color 0.3s; } /* 💡 સ્મૂથ ટ્રાન્ઝિશન માટે */
     
     .sector-header { background: #1a1a1a !important; color: #d4af37 !important; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: left !important; font-size: 0.85em; border-left: 2px solid #d4af37; padding: 4px 8px !important; }
     .crypto-header { background: #1a1a1a !important; color: #f7931a !important; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: left !important; font-size: 0.85em; border-left: 2px solid #f7931a; padding: 4px 8px !important; }
@@ -53,16 +52,15 @@ st.markdown("""
     .neutral { background-color: #555; color: #fff; }
     
     h1, h2, h3, h4 { font-family: 'Orbitron', sans-serif; color: #d4af37 !important; margin-bottom: 5px; padding: 0; }
-    
-    /* નવું લાઈવ સ્ટેટસ બટન */
-    .live-badge { text-align: center; padding: 10px; background-color: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; border-radius: 5px; color: #00ff00; font-weight: bold; font-family: 'Orbitron', sans-serif; margin-top: 20px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); }
+    .live-badge { text-align: center; padding: 10px; background-color: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; border-radius: 5px; color: #00ff00; font-weight: bold; font-family: 'Orbitron', sans-serif; margin-top: 20px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. માર્કેટ એન્જિન (15 સેકન્ડ લાઈવ કેશ)
+# ૩. માર્કેટ એન્જિન (ફાસ્ટ કેશલેસ)
 # ==========================================
-@st.cache_data(ttl=15)
+# 💡 કેશ કાઢી નાખ્યો જેથી દર 3 સેકન્ડે પ્યોર લાઈવ ડેટા આવે
 def get_terminal_data(ticker):
     try:
         ticker = ticker.strip().upper()
@@ -104,30 +102,31 @@ def get_terminal_data(ticker):
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v16.8 [True Live Edition]")
+    st.write("🤖 v16.9 [Smooth Live]")
     st.markdown("---")
-    
-    # 💡 બટન કાઢીને લાઈવ સ્ટેટસ ઇન્ડિકેટર મૂકી દીધું
-    st.markdown("<div class='live-badge'>🟢 SYSTEM LIVE <br><small>AUTO-SYNC ON</small></div>", unsafe_allow_html=True)
-
-# --- SCROLLING TICKER ---
-nifty = get_terminal_data('^NSEI')
-banknifty = get_terminal_data('^NSEBANK')
-btc = get_terminal_data('BTC-USD')
-
-ticker_html = "<div class='ticker-wrap'><div class='ticker'>"
-if nifty: ticker_html += f"<div class='ticker-item'><span class='t-title'>NIFTY:</span> <span class='{nifty['Trend_Class']}'>₹{nifty['Price']} {nifty['Arrow']}</span></div>"
-if banknifty: ticker_html += f"<div class='ticker-item'><span class='t-title'>BANK NIFTY:</span> <span class='{banknifty['Trend_Class']}'>₹{banknifty['Price']} {banknifty['Arrow']}</span></div>"
-if btc: ticker_html += f"<div class='ticker-item'><span class='t-crypto'>BITCOIN (TEST):</span> <span class='{btc['Trend_Class']}'>${btc['Price']} {btc['Arrow']}</span></div>"
-ticker_html += "</div></div>"
-st.markdown(ticker_html, unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 TICK ENGINE <br><small>3 SEC SYNC</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([1.8, 1])
 
-# --- ડાબી બાજુ: રડાર અને ક્રિપ્ટો ટેબલ ---
-with left:
-    st.markdown("<h4>📡 F&O SECTOR RADAR</h4>", unsafe_allow_html=True)
+# 💡 ધ મેજિક: આ આખું સેક્શન દર 3 સેકન્ડે ચૂપચાપ રિફ્રેશ થશે (પેજ હલ્યા વગર)
+@st.fragment(run_every=3)
+def live_market_board():
+    global live_context_data # AI માટે ગ્લોબલ ડેટા
+    live_context_data = []
     
+    # --- SCROLLING TICKER ---
+    nifty = get_terminal_data('^NSEI')
+    banknifty = get_terminal_data('^NSEBANK')
+    btc = get_terminal_data('BTC-USD')
+
+    ticker_html = "<div class='ticker-wrap'><div class='ticker'>"
+    if nifty: ticker_html += f"<div class='ticker-item'><span class='t-title'>NIFTY:</span> <span class='{nifty['Trend_Class']}'>₹{nifty['Price']} {nifty['Arrow']}</span></div>"
+    if banknifty: ticker_html += f"<div class='ticker-item'><span class='t-title'>BANK NIFTY:</span> <span class='{banknifty['Trend_Class']}'>₹{banknifty['Price']} {banknifty['Arrow']}</span></div>"
+    if btc: ticker_html += f"<div class='ticker-item'><span class='t-crypto'>BITCOIN (TEST):</span> <span class='{btc['Trend_Class']}'>${btc['Price']} {btc['Arrow']}</span></div>"
+    ticker_html += "</div></div>"
+    st.markdown(ticker_html, unsafe_allow_html=True)
+
+    # --- રડાર ટેબલ ---
     fo_sectors = {
         "IT": ['INFY', 'TCS', 'WIPRO', 'HCLTECH', 'TECHM'],
         "BANKING": ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK', 'KOTAKBANK'],
@@ -137,12 +136,9 @@ with left:
         "METALS": ['TATASTEEL', 'HINDALCO', 'JSWSTEEL', 'VEDL', 'NMDC']
     }
     
-    live_context_data = []
-    
     def build_table(sector_name, stocks, is_crypto=False):
         rows_html = ""
         buy_count, sell_count, total = 0, 0, 0
-        
         for s in stocks:
             d = get_terminal_data(s)
             if d: 
@@ -172,9 +168,13 @@ with left:
     grid_html += "</div></div>"
     st.markdown(grid_html, unsafe_allow_html=True)
     
-    st.markdown("<h4 style='margin-top:15px; color:#f7931a;'>🪙 24x7 CRYPTO TEST BED</h4>", unsafe_allow_html=True)
+    # ક્રિપ્ટો ટેસ્ટ બેડ
     crypto_list = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD', 'XRP-USD']
-    st.markdown(build_table("HIGH VOLUME CRYPTO", crypto_list, is_crypto=True), unsafe_allow_html=True)
+    st.markdown(build_table("HIGH VOLUME CRYPTO (24x7)", crypto_list, is_crypto=True), unsafe_allow_html=True)
+
+with left:
+    # ફંક્શન કોલ કરીશું એટલે તે દર 3 સેકન્ડે જાતે જ ચાલ્યા કરશે
+    live_market_board()
 
 # --- જમણી બાજુ: કમાન્ડ બોટ ---
 with right:
@@ -192,13 +192,12 @@ with right:
         with chat_box.chat_message("assistant"):
             try:
                 memory_string = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages[-4:]])
-                market_status = " | ".join(live_context_data)
+                market_status = " | ".join(live_context_data) if 'live_context_data' in globals() else "માર્કેટ લોડ થઈ રહ્યું છે..."
                 
                 ai_prompt = f"""
                 માલિક: નિલેશ શાહ. માર્કેટ ડેટા: {market_status}
                 તમારે એકદમ દેશી, ટૂંકો અને સીધો જવાબ આપવાનો છે. માત્ર 1 જ લાઈનમાં.
-                ઉદાહરણ 1: નિલેશભાઈ, ઇન્ફોસિસ અત્યારે 1292 રૂપિયા છે, માર્કેટમાં તેજી છે, 1310 નો ટાર્ગેટ રાખો.
-                ઉદાહરણ 2: નિલેશભાઈ, બિટકોઇન (BTC) અત્યારે 65000 ડોલર છે, ખરીદાય એવો છે.
+                ઉદાહરણ: નિલેશભાઈ, ઇન્ફોસિસ અત્યારે 1292 રૂપિયા છે, માર્કેટમાં તેજી છે, 1310 નો ટાર્ગેટ રાખો.
                 વાતચીત: {memory_string}
                 User: {pr}
                 Assistant: 
@@ -209,10 +208,3 @@ with right:
                 st.session_state.messages.append({"role": "assistant", "content": reply})
             except Exception as e:
                 st.error(f"Engine Error: {e}")
-
-# ==========================================
-# ૫. ઓટો-રિફ્રેશ એન્જિન (Auto-Reload)
-# ==========================================
-# 💡 આ કોડની જાદુઈ લાઈન: દર 15 સેકન્ડે પેજ પોતાની જાતે નવો ડેટા ખેંચી લાવશે
-time.sleep(15)
-st.rerun()
