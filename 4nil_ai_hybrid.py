@@ -143,8 +143,15 @@ with right:
         
         with chat_box.chat_message("assistant"):
             try:
-                # 💡 ફિક્સ: AI ને સિમ્પલ ગુજરાતી બોલવાનો કમાન્ડ 
-                ai_prompt = f"User: {pr}. Answer in very simple, everyday conversational Gujarati. DO NOT use formal or pure Sanskrit-like Gujarati words. Keep it brief. Context: Stock Market. Owner: Nilesh Shah."
+                # 💡 ધ ફાઇનલ ફિક્સ: AI ને એકદમ દેશી અને ટૂંકી ભાષા વાપરવાનો કડક કમાન્ડ
+                ai_prompt = f"""
+                User: {pr}. 
+                સૂચના: તમારે એકદમ સામાન્ય, ટૂંકી અને રોજબરોજની ગુજરાતી બોલીમાં જ જવાબ આપવાનો છે. 
+                'વિશ્લેષણ', 'સંભાવના', 'પ્રતિભાવ' જેવા ભારે અથવા સંસ્કૃત શબ્દો બિલકુલ ના વાપરતા. 
+                માત્ર 'તેજી', 'મંદી', 'ભાવ', 'ખરીદાય', 'વેચાય' જેવા સાદા શબ્દો વાપરો. 
+                જવાબ માત્ર ૧ કે ૨ લાઈનનો જ હોવો જોઈએ. 
+                માલિકનું નામ: નિલેશ શાહ.
+                """
                 
                 res = client.models.generate_content(
                     model="gemini-3.1-flash-lite-preview",
@@ -157,7 +164,11 @@ with right:
                     reply = "સર્વર બીઝી છે, ફરીથી પૂછો."
                     
                 st.markdown(reply)
-                speak_cloud(reply)
+                
+                # બોલતા પહેલાં આંકડા અને અંગ્રેજી શબ્દોને સરળ કરવા જેથી રોબોટિક ના લાગે
+                voice_text = reply.replace("₹", "રૂપિયા ").replace("%", "ટકા ").replace("&", "અને")
+                speak_cloud(voice_text)
+                
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 
             except Exception as e:
