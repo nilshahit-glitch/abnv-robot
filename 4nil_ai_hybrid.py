@@ -15,11 +15,26 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH SHAH", layout="wide")
 
 # ==========================================
-# ૨. અલ્ટ્રા-કોમ્પેક્ટ CSS Grid & Styling
+# ૨. અલ્ટ્રા-કોમ્પેક્ટ CSS Grid & ZERO FLICKER
 # ==========================================
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+    
+    /* 💡 THE MAGIC: ZERO-FLICKER ENGINE (ઝબકારો બંધ કરવા) */
+    div[data-stale="true"] {
+        opacity: 1 !important;
+        filter: none !important;
+        pointer-events: auto !important;
+        transition: none !important;
+    }
+    [data-testid="stSkeleton"], .stSpinner {
+        display: none !important;
+    }
+    * {
+        transition: none !important; /* બધી જ એનિમેશન બંધ કરી દીધી જેથી સ્મૂથ રહે */
+    }
+    /* ---------------------------------------------------- */
     
     .stApp { background-color: #030303; }
     [data-testid="stSidebar"] { background-color: #0a0a0a !important; border-right: 1px solid #d4af37; }
@@ -34,7 +49,7 @@ st.markdown("""
     
     .f-o-table { width: 100%; border-collapse: collapse; color: white; font-family: 'Roboto Mono', sans-serif; font-size: 0.8em; background: #0a0a0a; border: 1px solid #222; }
     .f-o-table th { background: #111; color: #d4af37; padding: 4px; text-align: left; border-bottom: 1px solid #d4af37; font-family: 'Orbitron', sans-serif; font-size: 0.85em; }
-    .f-o-table td { padding: 2px 4px; border-bottom: 1px solid #1a1a1a; transition: background-color 0.3s; } /* 💡 સ્મૂથ ટ્રાન્ઝિશન માટે */
+    .f-o-table td { padding: 2px 4px; border-bottom: 1px solid #1a1a1a; } 
     
     .sector-header { background: #1a1a1a !important; color: #d4af37 !important; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: left !important; font-size: 0.85em; border-left: 2px solid #d4af37; padding: 4px 8px !important; }
     .crypto-header { background: #1a1a1a !important; color: #f7931a !important; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: left !important; font-size: 0.85em; border-left: 2px solid #f7931a; padding: 4px 8px !important; }
@@ -52,15 +67,13 @@ st.markdown("""
     .neutral { background-color: #555; color: #fff; }
     
     h1, h2, h3, h4 { font-family: 'Orbitron', sans-serif; color: #d4af37 !important; margin-bottom: 5px; padding: 0; }
-    .live-badge { text-align: center; padding: 10px; background-color: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; border-radius: 5px; color: #00ff00; font-weight: bold; font-family: 'Orbitron', sans-serif; margin-top: 20px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .live-badge { text-align: center; padding: 10px; background-color: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; border-radius: 5px; color: #00ff00; font-weight: bold; font-family: 'Orbitron', sans-serif; margin-top: 20px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. માર્કેટ એન્જિન (ફાસ્ટ કેશલેસ)
+# ૩. માર્કેટ એન્જિન
 # ==========================================
-# 💡 કેશ કાઢી નાખ્યો જેથી દર 3 સેકન્ડે પ્યોર લાઈવ ડેટા આવે
 def get_terminal_data(ticker):
     try:
         ticker = ticker.strip().upper()
@@ -102,16 +115,16 @@ def get_terminal_data(ticker):
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v16.9 [Smooth Live]")
+    st.write("🤖 v17.0 [Zero-Flicker]")
     st.markdown("---")
-    st.markdown("<div class='live-badge'>🟢 TICK ENGINE <br><small>3 SEC SYNC</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 TICK ENGINE <br><small>ANTI-FLICKER ON</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([1.8, 1])
 
-# 💡 ધ મેજિક: આ આખું સેક્શન દર 3 સેકન્ડે ચૂપચાપ રિફ્રેશ થશે (પેજ હલ્યા વગર)
+# 💡 ધ મેજિક: ફ્રેગમેન્ટ જે સ્મૂથલી અપડેટ થશે
 @st.fragment(run_every=3)
 def live_market_board():
-    global live_context_data # AI માટે ગ્લોબલ ડેટા
+    global live_context_data 
     live_context_data = []
     
     # --- SCROLLING TICKER ---
@@ -173,7 +186,6 @@ def live_market_board():
     st.markdown(build_table("HIGH VOLUME CRYPTO (24x7)", crypto_list, is_crypto=True), unsafe_allow_html=True)
 
 with left:
-    # ફંક્શન કોલ કરીશું એટલે તે દર 3 સેકન્ડે જાતે જ ચાલ્યા કરશે
     live_market_board()
 
 # --- જમણી બાજુ: કમાન્ડ બોટ ---
