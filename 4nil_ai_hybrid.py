@@ -122,7 +122,7 @@ with st.sidebar:
 left, right = st.columns([1.8, 1])
 
 # 💡 ધ મેજિક: ફ્રેગમેન્ટ જે સ્મૂથલી અપડેટ થશે
-@st.fragment(run_every=3)
+@st.fragment(run_every=15)
 def live_market_board():
     global live_context_data 
     live_context_data = []
