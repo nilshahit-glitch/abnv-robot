@@ -4,7 +4,6 @@ import pandas as pd
 import os
 import re
 import json
-import time
 import base64
 from gtts import gTTS
 from dotenv import load_dotenv
@@ -15,7 +14,6 @@ from google import genai
 # ==========================================
 load_dotenv()
 
-# API Key Logic (Cloud & Local)
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     api_key = st.secrets.get("GEMINI_API_KEY")
@@ -25,25 +23,48 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH SHAH", layout="wide")
 
 # ==========================================
-# ૨. એડવાન્સ UI 
+# ૨. એડવાન્સ UI (High Contrast & Clear Fonts)
 # ==========================================
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+    
     .stApp { background-color: #050505; }
+    
+    /* સાઈડબાર */
     [data-testid="stSidebar"] { background-color: #0a0a0a !important; border-right: 1px solid #d4af37; }
+    
+    /* ઇન્ડેક્સ અને સ્ટોક કાર્ડ્સ */
     .index-card { flex: 1; background: #111; border: 1px solid #d4af37; padding: 15px; border-radius: 10px; text-align: center; }
-    .stock-row { background: rgba(255, 255, 255, 0.02); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 5px solid #d4af37; display: flex; justify-content: space-between; align-items: center; }
+    .stock-row { background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 5px solid #d4af37; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* 💡 ફિક્સ: ચેટના અક્ષરો એકદમ સ્પષ્ટ સફેદ દેખાશે */
+    .stChatMessage {
+        background: #151515 !important;
+        border-left: 3px solid #d4af37 !important;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .stChatMessage p {
+        color: #ffffff !important; /* Pure White Font */
+        font-size: 1.1em;
+        font-family: 'Roboto Mono', sans-serif;
+        line-height: 1.6;
+    }
+    
+    /* એક્શન બેજ */
     .action-badge { padding: 4px 12px; border-radius: 4px; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.8em; }
     .buy { background-color: #00ff00; color: #000; }
     .sell { background-color: #ff0000; color: #fff; }
     .neutral { background-color: #555; color: #fff; }
+    
     h1, h2, h3, h4 { font-family: 'Orbitron', sans-serif; color: #d4af37 !important; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. ફંક્શન્સ (Web Voice & Data)
+# ૩. ફંક્શન્સ 
 # ==========================================
 
 def get_trading_signal(ticker):
@@ -67,25 +88,15 @@ def speak_cloud(text):
     try:
         clean_text = re.sub(r'[^\w\s\.]', '', text)
         if not clean_text: return
-        
-        # mp3 ફાઈલ બનાવો
         tts = gTTS(text=clean_text, lang='gu')
         tts.save("voice.mp3")
-        
-        # બ્રાઉઝરમાં પ્લે કરવા માટે HTML Audio 
         with open("voice.mp3", "rb") as f:
             data = f.read()
             b64 = base64.b64encode(data).decode()
-            audio_html = f'''
-                <audio autoplay="true" style="display:none;">
-                    <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
-                </audio>
-            '''
+            audio_html = f'''<audio autoplay="true" style="display:none;"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'''
             st.markdown(audio_html, unsafe_allow_html=True)
-            
         os.remove("voice.mp3")
-    except Exception as e:
-        print(f"Audio Error: {e}")
+    except: pass
 
 # ==========================================
 # ૪. ડેશબોર્ડ લેઆઉટ
@@ -93,7 +104,7 @@ def speak_cloud(text):
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v15.0 [Cloud Master]")
+    st.write("🤖 v15.1 [Clear Vision]")
     st.markdown("---")
     if st.button("RESCAN SYSTEM"): st.rerun()
 
@@ -132,19 +143,21 @@ with right:
         
         with chat_box.chat_message("assistant"):
             try:
+                # 💡 ફિક્સ: AI ને સિમ્પલ ગુજરાતી બોલવાનો કમાન્ડ 
+                ai_prompt = f"User: {pr}. Answer in very simple, everyday conversational Gujarati. DO NOT use formal or pure Sanskrit-like Gujarati words. Keep it brief. Context: Stock Market. Owner: Nilesh Shah."
+                
                 res = client.models.generate_content(
                     model="gemini-3.1-flash-lite-preview",
-                    contents=f"User: {pr}. Answer in Gujarati briefly. Focus on Infosys/Stocks. Owner: Nilesh Shah."
+                    contents=ai_prompt
                 )
                 
-                # 💡 જો સર્વર ખાલી રિસ્પોન્સ આપે તો ચેક કરવાનું લોજિક
                 if res and res.text:
                     reply = res.text
                 else:
-                    reply = "માફ કરજો, સર્વરમાંથી કોઈ જવાબ મળ્યો નથી. ફરીથી પૂછો."
+                    reply = "સર્વર બીઝી છે, ફરીથી પૂછો."
                     
                 st.markdown(reply)
-                speak_cloud(reply) # નવો વેબ ઓડિયો પ્લેયર
+                speak_cloud(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 
             except Exception as e:
