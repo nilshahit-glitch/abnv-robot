@@ -1,11 +1,10 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import yfinance as yf
 import pandas as pd
 import os
 import re
 import json
-import base64
-from gtts import gTTS
 from dotenv import load_dotenv
 from google import genai
 
@@ -23,48 +22,27 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH SHAH", layout="wide")
 
 # ==========================================
-# ૨. એડવાન્સ UI (High Contrast & Clear Fonts)
+# ૨. એડવાન્સ UI 
 # ==========================================
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
-    
     .stApp { background-color: #050505; }
-    
-    /* સાઈડબાર */
     [data-testid="stSidebar"] { background-color: #0a0a0a !important; border-right: 1px solid #d4af37; }
-    
-    /* ઇન્ડેક્સ અને સ્ટોક કાર્ડ્સ */
     .index-card { flex: 1; background: #111; border: 1px solid #d4af37; padding: 15px; border-radius: 10px; text-align: center; }
     .stock-row { background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 5px solid #d4af37; display: flex; justify-content: space-between; align-items: center; }
-    
-    /* 💡 ફિક્સ: ચેટના અક્ષરો એકદમ સ્પષ્ટ સફેદ દેખાશે */
-    .stChatMessage {
-        background: #151515 !important;
-        border-left: 3px solid #d4af37 !important;
-        border-radius: 8px;
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-    .stChatMessage p {
-        color: #ffffff !important; /* Pure White Font */
-        font-size: 1.1em;
-        font-family: 'Roboto Mono', sans-serif;
-        line-height: 1.6;
-    }
-    
-    /* એક્શન બેજ */
+    .stChatMessage { background: #151515 !important; border-left: 3px solid #d4af37 !important; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+    .stChatMessage p { color: #ffffff !important; font-size: 1.1em; font-family: 'Roboto Mono', sans-serif; line-height: 1.6; }
     .action-badge { padding: 4px 12px; border-radius: 4px; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.8em; }
     .buy { background-color: #00ff00; color: #000; }
     .sell { background-color: #ff0000; color: #fff; }
     .neutral { background-color: #555; color: #fff; }
-    
     h1, h2, h3, h4 { font-family: 'Orbitron', sans-serif; color: #d4af37 !important; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. ફંક્શન્સ 
+# ૩. પાવરફુલ ફંક્શન્સ 
 # ==========================================
 
 def get_trading_signal(ticker):
@@ -83,20 +61,26 @@ def get_trading_signal(ticker):
         return {"symbol": ticker.replace(".NS", ""), "price": round(last_p, 2), "action": act, "class": cls}
     except: return None
 
-def speak_cloud(text):
-    """Cloud-Ready Browser Audio Player"""
-    try:
-        clean_text = re.sub(r'[^\w\s\.]', '', text)
-        if not clean_text: return
-        tts = gTTS(text=clean_text, lang='gu')
-        tts.save("voice.mp3")
-        with open("voice.mp3", "rb") as f:
-            data = f.read()
-            b64 = base64.b64encode(data).decode()
-            audio_html = f'''<audio autoplay="true" style="display:none;"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'''
-            st.markdown(audio_html, unsafe_allow_html=True)
-        os.remove("voice.mp3")
-    except: pass
+def speak_premium(text):
+    """
+    પ્રીમિયમ બ્રાઉઝર બેઝ્ડ વૉઇસ એન્જિન (No gTTS)
+    આ સીધો જ તમારા MacBook/Mobile નો નેચરલ અવાજ વાપરશે.
+    """
+    clean_text = re.sub(r'[^\w\s\.]', '', text).replace('\n', ' ')
+    if not clean_text: return
+    
+    # JavaScript Speech Synthesis API
+    js_code = f"""
+    <script>
+        const textToSpeak = "{clean_text}";
+        const msg = new SpeechSynthesisUtterance(textToSpeak);
+        msg.lang = 'gu-IN'; // ગુજરાતી ભાષા
+        msg.rate = 0.95; // બોલવાની સ્પીડ થોડી નોર્મલ
+        msg.pitch = 1.0; 
+        window.speechSynthesis.speak(msg);
+    </script>
+    """
+    components.html(js_code, height=0, width=0)
 
 # ==========================================
 # ૪. ડેશબોર્ડ લેઆઉટ
@@ -104,7 +88,7 @@ def speak_cloud(text):
 
 with st.sidebar:
     st.title("NILESH SHAH")
-    st.write("🤖 v15.1 [Clear Vision]")
+    st.write("🤖 v15.3 [Premium Voice]")
     st.markdown("---")
     if st.button("RESCAN SYSTEM"): st.rerun()
 
@@ -143,14 +127,10 @@ with right:
         
         with chat_box.chat_message("assistant"):
             try:
-                # 💡 ધ ફાઇનલ ફિક્સ: AI ને એકદમ દેશી અને ટૂંકી ભાષા વાપરવાનો કડક કમાન્ડ
                 ai_prompt = f"""
                 User: {pr}. 
-                સૂચના: તમારે એકદમ સામાન્ય, ટૂંકી અને રોજબરોજની ગુજરાતી બોલીમાં જ જવાબ આપવાનો છે. 
-                'વિશ્લેષણ', 'સંભાવના', 'પ્રતિભાવ' જેવા ભારે અથવા સંસ્કૃત શબ્દો બિલકુલ ના વાપરતા. 
-                માત્ર 'તેજી', 'મંદી', 'ભાવ', 'ખરીદાય', 'વેચાય' જેવા સાદા શબ્દો વાપરો. 
-                જવાબ માત્ર ૧ કે ૨ લાઈનનો જ હોવો જોઈએ. 
-                માલિકનું નામ: નિલેશ શાહ.
+                સૂચના: એકદમ સાદી ગુજરાતી ભાષા વાપરો. જાણે કોઈ અમદાવાદી મિત્ર વાત કરતો હોય.
+                જવાબ માત્ર ૧ કે ૨ લાઈનનો જ હોવો જોઈએ. માલિક: નિલેશ શાહ.
                 """
                 
                 res = client.models.generate_content(
@@ -158,16 +138,12 @@ with right:
                     contents=ai_prompt
                 )
                 
-                if res and res.text:
-                    reply = res.text
-                else:
-                    reply = "સર્વર બીઝી છે, ફરીથી પૂછો."
-                    
+                reply = res.text if (res and res.text) else "સર્વર બીઝી છે."
                 st.markdown(reply)
                 
-                # બોલતા પહેલાં આંકડા અને અંગ્રેજી શબ્દોને સરળ કરવા જેથી રોબોટિક ના લાગે
-                voice_text = reply.replace("₹", "રૂપિયા ").replace("%", "ટકા ").replace("&", "અને")
-                speak_cloud(voice_text)
+                # અવાજને સ્મૂથ કરવા ચિહ્નો કાઢી નાખ્યા
+                voice_text = reply.replace("₹", "રૂપિયા ").replace("%", "ટકા ").replace("-", " માઇનસ ")
+                speak_premium(voice_text)
                 
                 st.session_state.messages.append({"role": "assistant", "content": reply})
                 
