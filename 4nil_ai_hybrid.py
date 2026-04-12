@@ -336,7 +336,7 @@ with right:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.error(f"માફ કરજો, '{scan_target}' નો ડેટા મળ્યો નહિ. (કદાચ Yahoo Finance સર્વર ડાઉન છે અથવા સ્પેલિંગ ખોટો છે).")
+                st.error(f"માફ કરજો, '{scan_target}' નો ડેટા મળ્યો નહિ. (કદાચ ABNV Finance સર્વર ડાઉન છે અથવા સ્પેલિંગ ખોટો છે).")
     
     st.markdown("<br><h4 style='font-family: Orbitron; color: #d4af37; margin-bottom: 10px;'>🤖 ABNV BOT CORE</h4>", unsafe_allow_html=True)
     if "messages" not in st.session_state: st.session_state.messages = []
