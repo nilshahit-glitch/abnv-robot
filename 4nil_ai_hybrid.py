@@ -178,8 +178,10 @@ st.markdown("""
     .stChatMessage { background: rgba(20,20,20,0.5) !important; border-left: 2px solid #d4af37 !important; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
     .stChatMessage p { color: #eee !important; font-size: 0.95em; font-family: 'Roboto Mono', sans-serif; margin: 0; }
     .live-badge { text-align: center; padding: 8px; background: rgba(0, 255, 0, 0.05); border: 1px solid rgba(0,255,0,0.5); border-radius: 5px; color: #00ff00; font-family: 'Orbitron', sans-serif; font-size: 0.8em; margin-top: 20px; }
-    
-    # ==========================================
+    </style>
+    """, unsafe_allow_html=True) 
+
+# ==========================================
 # ૩.૧ AUTOCORRECT KILLER (JS HACK)
 # ==========================================
 # 💡 આ કોડ બ્રાઉઝરના કીબોર્ડને ઓટો-કરેક્ટ અને સ્પેલિંગ સુધારતા રોકશે
@@ -197,22 +199,6 @@ st.components.v1.html(
     """,
     height=0, width=0
 )
-
-    /* 💡 નવું: ઇનપુટ બોક્સની ગ્લાસ ડિઝાઇન અને કલર */
-    div[data-baseweb="input"] {
-        background-color: rgba(20,20,20,0.8) !important;
-        border: 1px solid rgba(212,175,55,0.5) !important;
-        border-radius: 8px !important;
-    }
-    div[data-baseweb="input"] input {
-        color: #d4af37 !important;
-        font-family: 'Roboto Mono', sans-serif !important;
-    }
-    div[data-baseweb="input"] input::placeholder {
-        color: #888888 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 # ==========================================
 # ૪. એડવાન્સ માર્કેટ એન્જિન
