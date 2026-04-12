@@ -15,7 +15,74 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH & VASVI", layout="wide")
 
 # ==========================================
-# ૨. નેક્સ્ટ-લેવલ ગ્લાસ UI & ZERO FLICKER
+# ૨. અલ્ટ્રા-સ્માર્ટ ડિક્શનરી (AI Alias Engine)
+# ==========================================
+FO_MASTER_LIST = {
+    # IT & Tech
+    "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY"],
+    "INFY": ["INFY", "INFOSYS"],
+    "TCS": ["TCS", "TATA CONSULTANCY"],
+    "TECHM": ["TECH MAHINDRA", "TECHM"],
+    "WIPRO": ["WIPRO"],
+    
+    # Banks & Finance
+    "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK"],
+    "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK"],
+    "SBIN": ["SBI", "SBIN", "STATE BANK"],
+    "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN"],
+    "BAJAJFINSV": ["BAJAJ FINSERV", "FINSERV"],
+    "AXISBANK": ["AXIS", "AXISBANK", "AXIS BANK"],
+    "KOTAKBANK": ["KOTAK", "KOTAKBANK"],
+    
+    # Auto
+    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO"],
+    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM"],
+    "MARUTI": ["MARUTI", "MARUTI SUZUKI"],
+    "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO"],
+    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS"],
+    "TVSMOTOR": ["TVS", "TVSMOTOR", "TVS MOTORS"],
+    
+    # Energy, Infra & Metals
+    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES"],
+    "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO"],
+    "BHEL": ["BHEL", "BHARAT HEAVY"],
+    "SAIL": ["SAIL", "STEEL AUTHORITY"],
+    "ONGC": ["ONGC"], "NTPC": ["NTPC"], "POWERGRID": ["POWERGRID", "POWER GRID"],
+    "TATAPOWER": ["TATA POWER", "TATAPOWER"],
+    "TATASTEEL": ["TATA STEEL", "TATASTEEL"],
+    "HINDALCO": ["HINDALCO"], "JSWSTEEL": ["JSW", "JSWSTEEL"], "VEDL": ["VEDANTA", "VEDL"],
+    
+    # FMCG & Others (અઘરા નામો)
+    "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N"], 
+    "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC"], 
+    "HITACHIEGY": ["HITACHI ENERGY", "POWERGRID HITACHI"],
+    "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA"],
+    "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN"],
+    "ITC": ["ITC"], "ZOMATO": ["ZOMATO"], "BRITANNIA": ["BRITANNIA"],
+    "DABUR": ["DABUR"], "NMDC": ["NMDC"],
+    
+    # Crypto
+    "BTC-USD": ["BTC", "BITCOIN", "BIT COIN"],
+    "ETH-USD": ["ETH", "ETHEREUM"],
+    "SOL-USD": ["SOL", "SOLANA"],
+    "BNB-USD": ["BNB", "BINANCE"],
+    "XRP-USD": ["XRP", "RIPPLE"]
+}
+
+def get_smart_symbol(query):
+    query = query.strip().upper()
+    if query in FO_MASTER_LIST.keys(): return query
+    
+    clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
+    for symbol, aliases in FO_MASTER_LIST.items():
+        for alias in aliases:
+            clean_alias = alias.replace(" ", "").replace("-", "").replace("&", "")
+            if clean_query == clean_alias or clean_query in clean_alias or clean_alias in clean_query:
+                return symbol
+    return query
+
+# ==========================================
+# ૩. ગ્લાસ UI સ્ટાઈલ
 # ==========================================
 st.markdown("""
     <style>
@@ -38,7 +105,8 @@ st.markdown("""
     .glass-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 10px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); }
     
     .scan-card { background: rgba(0, 255, 0, 0.05); border: 1px solid #00ff00; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 0 15px rgba(0,255,0,0.1); }
-    .scan-title { font-family: 'Orbitron', sans-serif; color: #00ff00; font-size: 1.5em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid rgba(0,255,0,0.3); padding-bottom: 5px; }
+    .scan-title { font-family: 'Orbitron', sans-serif; color: #00ff00; font-size: 1.5em; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid rgba(0,255,0,0.3); padding-bottom: 5px; }
+    .scan-alias { font-family: 'Roboto Mono', sans-serif; font-size: 0.8em; color: #d4af37; margin-bottom: 15px; }
     .scan-data { font-family: 'Roboto Mono', sans-serif; color: #fff; font-size: 1em; display: flex; justify-content: space-between; margin-bottom: 5px; }
     .scan-data span { color: #888; }
     
@@ -69,86 +137,13 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. ULTRA-SMART SEARCH ENGINE (બ્રહ્માસ્ત્ર)
+# ૪. એડવાન્સ માર્કેટ એન્જિન
 # ==========================================
-# 💡 મેં અઘરા F&O સ્ટોક્સનું આખું લિસ્ટ અહિયાં એડ કરી દીધું છે!
-FO_MASTER_LIST = {
-    # IT & Tech
-    "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY"],
-    "INFY": ["INFY", "INFOSYS"],
-    "TCS": ["TCS", "TATA CONSULTANCY"],
-    "TECHM": ["TECH MAHINDRA", "TECHM"],
-    
-    # Banks & Finance
-    "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK"],
-    "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK"],
-    "SBIN": ["SBI", "SBIN", "STATE BANK"],
-    "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN"],
-    "BAJAJFINSV": ["BAJAJ FINSERV", "FINSERV"],
-    "LTF": ["L&T FINANCE", "LNT FINANCE", "LTF"],
-    
-    # Auto
-    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO"],
-    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM"],
-    "MARUTI": ["MARUTI", "MARUTI SUZUKI"],
-    "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO"],
-    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS"],
-    
-    # Energy, Infra & Metals
-    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES"],
-    "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO"],
-    "BHEL": ["BHEL", "BHARAT HEAVY"],
-    "BEL": ["BEL", "BHARAT ELECTRONICS"],
-    "HAL": ["HAL", "HINDUSTAN AERONAUTICS"],
-    "SAIL": ["SAIL", "STEEL AUTHORITY"],
-    
-    # FMCG, Pharma & Others (અઘરા નામો)
-    "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL"], # 💡 તમારું ઉદાહરણ!
-    "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC"], # 💡 તમારું ઉદાહરણ!
-    "HITACHIEGY": ["HITACHI ENERGY", "POWERGRID HITACHI"],
-    "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA"],
-    "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN"],
-    "DRREDDY": ["DR REDDY", "REDDY"],
-    "ZEEL": ["ZEE", "ZEEL", "ZEE TV"],
-    "MOTHERSON": ["MOTHERSON", "SAMVARDHANA"],
-    "ITC": ["ITC"],
-    "ZOMATO": ["ZOMATO"],
-    
-    # Crypto
-    "BTC-USD": ["BTC", "BITCOIN", "BIT COIN"],
-    "ETH-USD": ["ETH", "ETHEREUM"],
-    "SOL-USD": ["SOL", "SOLANA"],
-}
-
-def get_smart_symbol(query):
-    query = query.strip().upper()
-    
-    # 1. ડાયરેક્ટ મેચ
-    if query in FO_MASTER_LIST.keys(): return query
-    
-    # 💡 2. એડવાન્સ Fuzzy Logic: સ્પેસ, માઇનસ અને & કાઢીને ચેક કરો
-    clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
-    
-    for symbol, aliases in FO_MASTER_LIST.items():
-        for alias in aliases:
-            clean_alias = alias.replace(" ", "").replace("-", "").replace("&", "")
-            
-            # જો નામ એકદમ મેચ થતું હોય અથવા અડધું નામ અંદર આવી જતું હોય
-            if clean_query == clean_alias or clean_query in clean_alias or clean_alias in clean_query:
-                return symbol
-                
-    # 3. જો લિસ્ટમાં ના હોય તો યાહૂ ફાઇનાન્સ જાતે સંભાળી લેશે
-    return query
-
-
-# ==========================================
-# ૪. એડવાન્સ માર્કેટ એન્જિન (RSI + MACD)
-# ==========================================
-def get_terminal_data(ticker):
+def get_terminal_data(original_query):
     try:
-        # 💡 ડેટા ખેંચતા પહેલા સ્માર્ટ સર્ચ કરો
-        ticker = get_smart_symbol(ticker)
-        raw_symbol = ticker # સ્ક્રીન પર દેખાડવા માટે
+        # સ્માર્ટ એન્જિનથી સાચો સિમ્બોલ લાવો
+        ticker = get_smart_symbol(original_query)
+        raw_symbol = ticker 
         
         if not ticker.endswith('.NS') and not ticker.startswith('^') and not ticker.endswith('-USD'): 
             ticker += '.NS'
@@ -159,7 +154,6 @@ def get_terminal_data(ticker):
         
         last = df.iloc[-1]
         prev_close = df.iloc[-2]['Close']
-        
         ema20 = df['Close'].ewm(span=20, adjust=False).mean().iloc[-1]
         
         delta = df['Close'].diff()
@@ -187,6 +181,7 @@ def get_terminal_data(ticker):
         
         return {
             "Symbol": raw_symbol,
+            "Query": original_query.upper(), # 💡 યુઝરે શું લખ્યું હતું તે યાદ રાખવા
             "Price": round(last['Close'], 2),
             "Signal": act, "Class": cls, "Trend_Class": trend_class, "Arrow": arrow, "Currency": currency,
             "RSI": current_rsi, "MACD": "Bullish" if macd_bullish else "Bearish"
@@ -223,8 +218,10 @@ def live_market_board():
     fo_sectors = {
         "IT": ['INFY', 'TCS', 'WIPRO', 'HCLTECH', 'TECHM'],
         "BANKING": ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK', 'KOTAKBANK'],
-        "AUTO": ['TATAMOTORS', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'FORCEMOT'], # 💡 Force Motors ઉમેર્યું
-        "ENERGY": ['RELIANCE', 'ONGC', 'NTPC', 'POWERGRID', 'TATAPOWER']
+        "AUTO": ['TATAMOTORS', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'FORCEMOT'],
+        "ENERGY": ['RELIANCE', 'ONGC', 'NTPC', 'POWERGRID', 'TATAPOWER'],
+        "FMCG": ['ITC', 'BRITANNIA', 'TATACONSUM', 'DABUR'],
+        "METALS": ['TATASTEEL', 'HINDALCO', 'JSWSTEEL', 'VEDL', 'NMDC']
     }
     
     def build_table(sector_name, stocks, is_crypto=False):
@@ -236,7 +233,6 @@ def live_market_board():
                 total += 1
                 if d['Signal'] == 'BUY': buy_count += 1
                 elif d['Signal'] == 'SELL': sell_count += 1
-                
                 live_context_data.append(f"{d['Symbol']}: {d['Price']} ({d['Signal']}, RSI:{d['RSI']})")
                 rows_html += f"<tr><td style='color:#ffffff; font-weight:bold;'>{d['Symbol']}</td><td>{d['Currency']}{d['Price']}</td><td><span class='action-badge {d['Class']}'>{d['Signal']}</span></td></tr>"
         
@@ -265,27 +261,29 @@ with left:
 # --- જમણી બાજુ: સ્માર્ટ સ્કેનર અને કમાન્ડ બોટ ---
 with right:
     st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 5px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
-    # 💡 પ્લેસહોલ્ડરમાં લખી દીધું કે અડધું નામ પણ ચાલશે
-    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. hcl, sbi, force)", placeholder="Type full or partial name...")
+    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. hitachi, united spirit)", placeholder="Type full or partial name...")
     
     if scan_target:
-        with st.spinner("Searching Target..."):
+        with st.spinner(f"AI is hunting for '{scan_target}'..."):
             scan_data = get_terminal_data(scan_target)
             if scan_data:
                 card_color = "rgba(0,255,0,0.1)" if scan_data['Signal'] == 'BUY' else "rgba(255,0,0,0.1)" if scan_data['Signal'] == 'SELL' else "rgba(100,100,100,0.1)"
                 border_color = "#00ff00" if scan_data['Signal'] == 'BUY' else "#ff0000" if scan_data['Signal'] == 'SELL' else "#888"
                 
-                # 💡 કયું સાચું નામ સર્ચ થયું તે પણ બતાવશે
+                # 💡 જો યુઝરનું નામ અને ઓરિજિનલ સિમ્બોલ અલગ હોય તો AI બતાવશે કે તેણે શું શોધી કાઢ્યું!
+                alias_text = f"AI Auto-Detected: {scan_data['Symbol']}" if scan_data['Symbol'] != scan_data['Query'] else ""
+                
                 st.markdown(f"""
                 <div class='scan-card' style='background: {card_color}; border-color: {border_color};'>
                     <div class='scan-title'>{scan_data['Symbol']} <span style='float:right;'>{scan_data['Currency']}{scan_data['Price']}</span></div>
+                    <div class='scan-alias'>{alias_text}</div>
                     <div class='scan-data'><span>RSI (14 Days):</span> <b style='color:{"#ff4b4b" if scan_data["RSI"]>70 else "#00ff00" if scan_data["RSI"]<30 else "#fff"}'>{scan_data["RSI"]}</b></div>
                     <div class='scan-data'><span>MACD Trend:</span> <b>{scan_data["MACD"]}</b></div>
                     <div class='scan-data'><span>System Signal:</span> <span class='action-badge {scan_data["Class"]}'>{scan_data["Signal"]}</span></div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.error("માફ કરજો, આ નામનો કોઈ સ્ટોક મળ્યો નથી.")
+                st.error(f"માફ કરજો, '{scan_target}' નામનો કોઈ સ્ટોક મળ્યો નથી. સાચો સ્પેલિંગ લખવા વિનંતી.")
     
     st.markdown("<br><h4 style='font-family: Orbitron; color: #d4af37; margin-bottom: 10px;'>🤖 ABNV COMMAND CORE</h4>", unsafe_allow_html=True)
     if "messages" not in st.session_state: st.session_state.messages = []
