@@ -12,66 +12,33 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
-st.set_page_config(page_title="ABNV TERMINAL | NILESH & VASVI", layout="wide")
+st.set_page_config(page_title="ABNV BOT TERMINAL | NILESH & VASVI", layout="wide")
 
 # ==========================================
-# ૨. THE ULTIMATE MASTER AI DICTIONARY (100+ Stocks)
+# ૨. MASTER AI DICTIONARY (ફક્ત ડેશબોર્ડ માટે)
 # ==========================================
+# 💡 ટાટા મોટર્સ અને બીજા મુખ્ય સ્ટોક્સ તેમના અસલી યાહૂ સિમ્બોલ સાથે પાછા સેટ કર્યા છે
 FO_MASTER_LIST = {
-    # 💡 Indices (ઇન્ડેક્સ)
     "^NSEI": ["NIFTY", "NIFTY 50", "NIFTY50", "નિફ્ટી", "નિફ્ટી 50"],
     "^NSEBANK": ["BANKNIFTY", "BANK NIFTY", "બેંક નિફ્ટી", "બેંકનિફ્ટી"],
-    
-    # IT & Tech
     "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY", "એચસીએલ", "એચ સી એલ"],
     "INFY": ["INFY", "INFOSYS", "ઇન્ફોસીસ", "ઇન્ફોસિસ"],
     "TCS": ["TCS", "TATA CONSULTANCY", "ટીસીએસ", "ટાટા કન્સલ્ટન્સી"],
     "TECHM": ["TECH MAHINDRA", "TECHM", "ટેક મહિન્દ્રા"],
     "WIPRO": ["WIPRO", "વિપ્રો"],
-    "LTIM": ["LTI", "MINDTREE", "LTIMINDTREE", "માઇન્ડટ્રી"],
-    
-    # Banks & Finance
     "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK", "એચડીએફસી", "એચ ડી એફ સી બેંક"],
     "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK", "આઈસીઆઈસીઆઈ"],
     "SBIN": ["SBI", "SBIN", "STATE BANK", "એસબીઆઈ", "સ્ટેટ બેંક"],
     "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN", "બજાજ ફાઇનાન્સ"],
-    "BAJAJFINSV": ["BAJAJ FINSERV", "FINSERV", "બજાજ ફિનસર્વ"],
     "AXISBANK": ["AXIS", "AXISBANK", "AXIS BANK", "એક્સિસ બેંક", "એક્સીસ"],
     "KOTAKBANK": ["KOTAK", "KOTAKBANK", "કોટક"],
-    "INDUSINDBK": ["INDUSIND", "INDUSIND BANK", "ઇન્ડસઇન્ડ"],
-    "PNB": ["PNB", "PUNJAB NATIONAL", "પીએનબી", "પંજાબ નેશનલ"],
-    "BOB": ["BOB", "BANK OF BARODA", "બીઓબી", "બેંક ઓફ બરોડા"],
-    "PFC": ["PFC", "POWER FINANCE", "પીએફસી"],
-    "RECLTD": ["REC", "RECLTD", "આરઈસી"],
-    "LICI": ["LIC", "LICI", "એલઆઈસી"],
-    "JIOFIN": ["JIO", "JIOFIN", "JIO FINANCE", "જીયો", "જિઓ"],
-    "IRFC": ["IRFC", "RAILWAY FINANCE", "આઈઆરએફસી"],
-    "IREDA": ["IREDA", "ઇરેડા"],
-    "CHOLAFIN": ["CHOLA", "CHOLAMANDALAM", "ચોલા"],
-    "BSE": ["BSE", "બીએસઈ"],
-    "MCX": ["MCX", "એમસીએક્સ"],
-    "CDSL": ["CDSL", "સીડીએસએલ"],
-    
-    # Auto
-    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO", "ટાટા મોટર્સ"],
+    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO", "ટાટા મોટર્સ", "TATA MOTOR"],
     "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM", "મહિન્દ્રા"],
     "MARUTI": ["MARUTI", "MARUTI SUZUKI", "મારુતિ", "મારુતી"],
     "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO", "BAJAJAUTO", "બજાજ ઓટો"],
     "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS", "ફોર્સ મોટર્સ"],
-    "TVSMOTOR": ["TVS", "TVSMOTOR", "TVS MOTORS", "ટીવીએસ"],
-    "EICHERMOT": ["EICHER", "EICHER MOTORS", "BULLET", "આઈશર"],
-    "HEROMOTOCO": ["HERO", "HEROMOTOCO", "હીરો"],
-    "MRF": ["MRF", "એમઆરએફ"],
-    "BOSCHLTD": ["BOSCH", "બોશ"],
-    "MOTHERSON": ["MOTHERSON", "MOTHERSUMI", "મધરસન"],
-    
-    # Energy, Infra & Metals
     "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES", "રિલાયન્સ"],
     "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO", "એલ એન્ડ ટી", "લાર્સન"], 
-    "BHEL": ["BHEL", "BHARAT HEAVY", "ભેલ"],
-    "BEL": ["BEL", "BHARAT ELECTRONICS", "બેલ"],
-    "HAL": ["HAL", "HINDUSTAN AERONAUTICS", "એચએએલ", "હિન્દુસ્તાન એરોનોટિક્સ"],
-    "SAIL": ["SAIL", "STEEL AUTHORITY", "સેલ"],
     "ONGC": ["ONGC", "ઓએનજીસી"], 
     "NTPC": ["NTPC", "એનટીપીસી"], 
     "POWERGRID": ["POWERGRID", "POWER GRID", "પાવરગ્રીડ"],
@@ -80,73 +47,34 @@ FO_MASTER_LIST = {
     "HINDALCO": ["HINDALCO", "હિન્દાલ્કો"], 
     "JSWSTEEL": ["JSW", "JSWSTEEL", "જેએસડબલ્યુ"], 
     "VEDL": ["VEDANTA", "VEDL", "વેદાન્તા"],
-    "COALINDIA": ["COAL INDIA", "COALINDIA", "કોલ ઇન્ડિયા"],
-    "AMBUJACEM": ["AMBUJA", "AMBUJACEM", "અંબુજા"],
-    "ULTRACEMCO": ["ULTRATECH", "ULTRACEMCO", "અલ્ટ્રાટેક"],
-    "GRASIM": ["GRASIM", "ગ્રાસિમ"],
-    "DLF": ["DLF", "ડીએલએફ"],
-    "ADANIENT": ["ADANI", "ADANI ENT", "ADANI ENTERPRISES", "અદાણી એન્ટરપ્રાઈઝ"],
-    "ADANIPORTS": ["ADANI PORT", "ADANI PORTS", "અદાણી પોર્ટ"],
-    "ADANIGREEN": ["ADANI GREEN", "અદાણી ગ્રીન"],
-    "ADANIPOWER": ["ADANI POWER", "અદાણી પાવર"],
-    "AWL": ["AWL", "ADANI WILMAR", "વિલ્મર"],
-    
-    # FMCG, Pharma & Consumer (💡 HUL & United Spirits 100% Fixed Here)
-    "HINDUNILVR": ["HUL", "HINDUSTAN UNILEVER", "UNILEVER", "હિન્દુસ્તાન યુનિલિવર", "એચયુએલ"],
-    "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N", "UNITDSPR", "યુનાઇટેડ સ્પિરિટ", "મેકડોવેલ"],
-    "ZYDUSLIFE": ["ZYDUS", "ZYDUSLIFE", "CADILA", "ઝાયડસ", "કેડિલા"], 
-    "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC", "હિટાચી"],
-    "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA", "ટાટા કન્ઝ્યુમર"],
-    "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN", "સન ફાર્મા"],
-    "TORNTPHARM": ["TORRENT", "TORNTPHARM", "ટોરેન્ટ ફાર્મા", "ટોરેન્ટ"],
-    "APOLLOHOSP": ["APOLLO", "APOLLOHOSP", "અપોલો"],
-    "CIPLA": ["CIPLA", "સિપ્લા"],
-    "DRREDDY": ["DR REDDY", "DRREDDY", "ડો રેડ્ડી"],
-    "DIVISLAB": ["DIVIS", "DIVISLAB", "દિવિસ", "ડીવીસ"],
-    "LUPIN": ["LUPIN", "લ્યુપિન"],
-    "BRITANNIA": ["BRITANNIA", "બ્રિટાનિયા"],
-    "DABUR": ["DABUR", "ડાબર"], 
-    "MARICO": ["MARICO", "મેરિકો"],
-    "GODREJCP": ["GODREJ", "GODREJCP", "ગોદરેજ"],
-    "COLPAL": ["COLGATE", "COLPAL", "કોલગેટ"],
-    "ASIANPAINT": ["ASIAN PAINT", "ASIAN PAINTS", "એશિયન પેઇન્ટ્સ"],
-    "BERGEPAINT": ["BERGER", "BERGEPAINT", "બર્જર પેઇન્ટ્સ"],
-    "PIDILITIND": ["PIDILITE", "FEVICOL", "પિડીલાઇટ", "ફેવિકોલ"],
-    "TITAN": ["TITAN", "ટાઇટન"],
-    "TRENT": ["TRENT", "ZUDIO", "ટ્રેન્ટ"],
-    "DMART": ["DMART", "AVENUE", "ડીમાર્ટ"],
-    
-    # New Tech & Others
-    "ZOMATO": ["ZOMATO", "ઝોમેટો"], 
-    "PAYTM": ["PAYTM", "પેટીએમ"],
-    "NYKAA": ["NYKAA", "નાયકા"],
-    "PBFINTECH": ["POLICY BAZAAR", "POLICYBAZAAR", "પોલિસી બાઝાર"],
-    "DELHIVERY": ["DELHIVERY", "દિલ્હીવેરી"],
-    "DIXON": ["DIXON", "ડિક્સન"],
-    "INDIGO": ["INDIGO", "INTERGLOBE", "ઇન્ડિગો", "ઈન્ડિગો"],
-    "IRCTC": ["IRCTC", "આઈઆરસીટીસી"],
-    "RVNL": ["RVNL", "આરવીએનએલ"],
-    "CUMMINSIND": ["CUMMINS", "કમિન્સ"],
     "NMDC": ["NMDC", "એનએમડીસી"], 
-    
-    # Crypto
+    "ITC": ["ITC", "આઈટીસી"], 
+    "BRITANNIA": ["BRITANNIA", "બ્રિટાનિયા"],
+    "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA", "ટાટા કન્ઝ્યુમર"],
+    "DABUR": ["DABUR", "ડાબર"], 
+    "HINDUNILVR": ["HUL", "HINDUSTAN UNILEVER", "UNILEVER", "હિન્દુસ્તાન યુનિલિવર", "એચયુએલ"],
+    "UNITDSPR": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N", "યુનાઇટેડ સ્પિરિટ", "મેકડોવેલ"],
+    "ZYDUSLIFE": ["ZYDUS", "ZYDUSLIFE", "CADILA", "ઝાયડસ", "કેડિલા"],
     "BTC-USD": ["BTC", "BITCOIN", "BIT COIN", "બિટકોઇન", "બીટકોઈન"],
     "ETH-USD": ["ETH", "ETHEREUM", "ઇથેરિયમ"],
     "SOL-USD": ["SOL", "SOLANA", "સોલાના"],
     "BNB-USD": ["BNB", "BINANCE", "બાઇનાન્સ"],
-    "XRP-USD": ["XRP", "RIPPLE", "રિપલ"],
-    "DOGE-USD": ["DOGE", "DOGECOIN", "ડોજકોઇન"]
+    "XRP-USD": ["XRP", "RIPPLE", "રિપલ"]
 }
 
+# ==========================================
+# ૩. TRUE HYBRID SEARCH LOGIC (Old Logic + AI)
+# ==========================================
 def get_smart_symbol(query):
     query = query.strip().upper()
     if not query: return ""
     
+    # 1. Exact & Alias Match
     if query in FO_MASTER_LIST: return query
-    
     for symbol, aliases in FO_MASTER_LIST.items():
         if query in [a.upper() for a in aliases]: return symbol
             
+    # 2. જૂનું પાવરફુલ ક્લીન મેચિંગ (જે તમને ગમતું હતું)
     clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
     for symbol, aliases in FO_MASTER_LIST.items():
         if clean_query == symbol.replace("-", ""): return symbol
@@ -165,10 +93,19 @@ def get_smart_symbol(query):
         for alias in aliases:
             if query in alias.split(): return symbol
 
+    # 3. 🚀 GEMINI AI FALLBACK (જો ડિક્શનરીમાં ના મળે, તો સીધું AI ને પૂછો)
+    try:
+        ai_prompt = f"Find the official Yahoo Finance NSE ticker symbol for the Indian stock query: '{query}'. Return ONLY the ticker symbol without '.NS'. For example, if query is 'ટાટા મોટર્સ', return TATAMOTORS. If 'hul', return HINDUNILVR. Return only the exact word."
+        res = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=ai_prompt)
+        if res and res.text:
+            return res.text.strip().upper().replace(".NS", "")
+    except:
+        pass
+
     return query
 
 # ==========================================
-# ૩. ગ્લાસ UI સ્ટાઈલ
+# ૩.૧ ગ્લાસ UI સ્ટાઈલ
 # ==========================================
 st.markdown("""
     <style>
@@ -220,7 +157,6 @@ st.markdown("""
     .stChatMessage p { color: #eee !important; font-size: 0.95em; font-family: 'Roboto Mono', sans-serif; margin: 0; }
     .live-badge { text-align: center; padding: 8px; background: rgba(0, 255, 0, 0.05); border: 1px solid rgba(0,255,0,0.5); border-radius: 5px; color: #00ff00; font-family: 'Orbitron', sans-serif; font-size: 0.8em; margin-top: 20px; }
     
-    /* 💡 ઇનપુટ બોક્સની ગ્લાસ ડિઝાઇન અને કલર */
     div[data-baseweb="input"] {
         background-color: rgba(20,20,20,0.8) !important;
         border: 1px solid rgba(212,175,55,0.5) !important;
@@ -236,9 +172,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ==========================================
-# ૩.૧ AUTOCORRECT KILLER (JS HACK)
-# ==========================================
 st.components.v1.html(
     """
     <script>
@@ -267,7 +200,9 @@ def get_terminal_data(original_query):
             
         t = yf.Ticker(ticker)
         df = t.history(period="3mo", interval="1d")
-        if df.empty or len(df) < 30: return None
+        
+        # 💡 જો Yahoo ડેટા ના આપે, તો સ્પષ્ટ ખબર પડે
+        if df.empty or len(df) < 20: return None
         
         last = df.iloc[-1]
         prev_close = df.iloc[-2]['Close']
@@ -312,7 +247,7 @@ def get_terminal_data(original_query):
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.12</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 TRUE AI SMART ENGINE <br><small>10 SEC SYNC | V17.13</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -401,7 +336,7 @@ with right:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.error(f"માફ કરજો, '{scan_target}' નામનો કોઈ સ્ટોક મળ્યો નથી. સાચો સ્પેલિંગ લખવા વિનંતી.")
+                st.error(f"માફ કરજો, '{scan_target}' નો ડેટા મળ્યો નહિ. (કદાચ Yahoo Finance સર્વર ડાઉન છે અથવા સ્પેલિંગ ખોટો છે).")
     
     st.markdown("<br><h4 style='font-family: Orbitron; color: #d4af37; margin-bottom: 10px;'>🤖 ABNV BOT CORE</h4>", unsafe_allow_html=True)
     if "messages" not in st.session_state: st.session_state.messages = []
