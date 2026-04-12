@@ -179,6 +179,25 @@ st.markdown("""
     .stChatMessage p { color: #eee !important; font-size: 0.95em; font-family: 'Roboto Mono', sans-serif; margin: 0; }
     .live-badge { text-align: center; padding: 8px; background: rgba(0, 255, 0, 0.05); border: 1px solid rgba(0,255,0,0.5); border-radius: 5px; color: #00ff00; font-family: 'Orbitron', sans-serif; font-size: 0.8em; margin-top: 20px; }
     
+    # ==========================================
+# ૩.૧ AUTOCORRECT KILLER (JS HACK)
+# ==========================================
+# 💡 આ કોડ બ્રાઉઝરના કીબોર્ડને ઓટો-કરેક્ટ અને સ્પેલિંગ સુધારતા રોકશે
+st.components.v1.html(
+    """
+    <script>
+    const inputs = window.parent.document.querySelectorAll('input[type=text]');
+    for (let i = 0; i < inputs.length; i++) {
+        inputs[i].setAttribute('spellcheck', 'false');
+        inputs[i].setAttribute('autocorrect', 'off');
+        inputs[i].setAttribute('autocapitalize', 'off');
+        inputs[i].setAttribute('autocomplete', 'off');
+    }
+    </script>
+    """,
+    height=0, width=0
+)
+
     /* 💡 નવું: ઇનપુટ બોક્સની ગ્લાસ ડિઝાઇન અને કલર */
     div[data-baseweb="input"] {
         background-color: rgba(20,20,20,0.8) !important;
