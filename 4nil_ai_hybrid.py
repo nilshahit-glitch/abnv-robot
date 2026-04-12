@@ -15,67 +15,72 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH & VASVI", layout="wide")
 
 # ==========================================
-# ૨. MASTER AI DICTIONARY (100% FLAWLESS)
+# ૨. MASTER AI DICTIONARY (English + Gujarati)
 # ==========================================
-# 💡 અહીં United Spirits અને Hitachi ના સાચા સિમ્બોલ નાખી દીધા છે
+# 💡 અહીં બધા મોટા સ્ટોક્સના ગુજરાતી નામો પણ ઉમેરી દીધા છે!
 FO_MASTER_LIST = {
-    "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY"],
-    "INFY": ["INFY", "INFOSYS"],
-    "TCS": ["TCS", "TATA CONSULTANCY"],
-    "TECHM": ["TECH MAHINDRA", "TECHM"],
-    "WIPRO": ["WIPRO"],
-    "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK"],
-    "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK"],
-    "SBIN": ["SBI", "SBIN", "STATE BANK"],
-    "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN"],
-    "BAJAJFINSV": ["BAJAJ FINSERV", "FINSERV"],
-    "AXISBANK": ["AXIS", "AXISBANK", "AXIS BANK"],
-    "KOTAKBANK": ["KOTAK", "KOTAKBANK"],
-    "INDUSINDBK": ["INDUSIND", "INDUSIND BANK"],
-    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO"],
-    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM"],
-    "MARUTI": ["MARUTI", "MARUTI SUZUKI"],
-    "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO", "BAJAJAUTO"],
-    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS"],
-    "TVSMOTOR": ["TVS", "TVSMOTOR", "TVS MOTORS"],
-    "EICHERMOT": ["EICHER", "EICHER MOTORS", "BULLET"],
-    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES"],
-    "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO"], # 💡 તમારું ઉદાહરણ
-    "BHEL": ["BHEL", "BHARAT HEAVY"],
-    "BEL": ["BEL", "BHARAT ELECTRONICS"],
-    "SAIL": ["SAIL", "STEEL AUTHORITY"],
-    "ONGC": ["ONGC"], "NTPC": ["NTPC"], "POWERGRID": ["POWERGRID", "POWER GRID"],
-    "TATAPOWER": ["TATA POWER", "TATAPOWER"],
-    "TATASTEEL": ["TATA STEEL", "TATASTEEL"],
-    "HINDALCO": ["HINDALCO"], "JSWSTEEL": ["JSW", "JSWSTEEL"], "VEDL": ["VEDANTA", "VEDL"],
-    "UNITDSPR": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N"], # 💡 ફિક્સ!
-    "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC"], # 💡 ફિક્સ!
-    "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA"],
-    "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN"],
-    "ITC": ["ITC"], "ZOMATO": ["ZOMATO"], "BRITANNIA": ["BRITANNIA"],
-    "DABUR": ["DABUR"], "NMDC": ["NMDC"], "ADANIENT": ["ADANI", "ADANI ENT", "ADANI ENTERPRISES"],
-    "ADANIPORTS": ["ADANI PORT", "ADANI PORTS"],
-    "ASIANPAINT": ["ASIAN PAINT", "ASIAN PAINTS"],
-    "BTC-USD": ["BTC", "BITCOIN", "BIT COIN"],
-    "ETH-USD": ["ETH", "ETHEREUM"],
-    "SOL-USD": ["SOL", "SOLANA"],
-    "BNB-USD": ["BNB", "BINANCE"],
-    "XRP-USD": ["XRP", "RIPPLE"]
+    "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY", "એચસીએલ", "એચ સી એલ"],
+    "INFY": ["INFY", "INFOSYS", "ઇન્ફોસીસ", "ઇન્ફોસિસ"],
+    "TCS": ["TCS", "TATA CONSULTANCY", "ટીસીએસ", "ટાટા કન્સલ્ટન્સી"],
+    "TECHM": ["TECH MAHINDRA", "TECHM", "ટેક મહિન્દ્રા"],
+    "WIPRO": ["WIPRO", "વિપ્રો"],
+    "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK", "એચડીએફસી", "એચ ડી એફ સી બેંક"],
+    "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK", "આઈસીઆઈસીઆઈ", "આઈ સી આઈ સી આઈ"],
+    "SBIN": ["SBI", "SBIN", "STATE BANK", "એસબીઆઈ", "સ્ટેટ બેંક"],
+    "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN", "બજાજ ફાઇનાન્સ", "બજાજ ફાયનાન્સ"],
+    "BAJAJFINSV": ["BAJAJ FINSERV", "FINSERV", "બજાજ ફિનસર્વ"],
+    "AXISBANK": ["AXIS", "AXISBANK", "AXIS BANK", "એક્સિસ બેંક", "એક્સીસ"],
+    "KOTAKBANK": ["KOTAK", "KOTAKBANK", "કોટક"],
+    "INDUSINDBK": ["INDUSIND", "INDUSIND BANK", "ઇન્ડસઇન્ડ"],
+    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO", "ટાટા મોટર્સ", "ટાટામોટર્સ"],
+    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM", "મહિન્દ્રા", "મહિંદ્રા"],
+    "MARUTI": ["MARUTI", "MARUTI SUZUKI", "મારુતિ", "મારુતી"],
+    "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO", "BAJAJAUTO", "બજાજ ઓટો"],
+    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS", "ફોર્સ મોટર્સ", "ફોર્સ"],
+    "TVSMOTOR": ["TVS", "TVSMOTOR", "TVS MOTORS", "ટીવીએસ"],
+    "EICHERMOT": ["EICHER", "EICHER MOTORS", "BULLET", "આઈશર"],
+    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES", "રિલાયન્સ", "રીલાયન્સ"],
+    "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO", "એલ એન્ડ ટી", "લાર્સન"], 
+    "BHEL": ["BHEL", "BHARAT HEAVY", "ભેલ"],
+    "BEL": ["BEL", "BHARAT ELECTRONICS", "બેલ"],
+    "SAIL": ["SAIL", "STEEL AUTHORITY", "સેલ"],
+    "ONGC": ["ONGC", "ઓએનજીસી"], 
+    "NTPC": ["NTPC", "એનટીપીસી"], 
+    "POWERGRID": ["POWERGRID", "POWER GRID", "પાવરગ્રીડ"],
+    "TATAPOWER": ["TATA POWER", "TATAPOWER", "ટાટા પાવર"],
+    "TATASTEEL": ["TATA STEEL", "TATASTEEL", "ટાટા સ્ટીલ"],
+    "HINDALCO": ["HINDALCO", "હિન્દાલ્કો"], 
+    "JSWSTEEL": ["JSW", "JSWSTEEL", "જેએસડબલ્યુ"], 
+    "VEDL": ["VEDANTA", "VEDL", "વેદાન્તા"],
+    "UNITDSPR": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N", "યુનાઇટેડ સ્પિરિટ", "મેકડોવેલ"],
+    "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC", "હિટાચી"],
+    "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA", "ટાટા કન્ઝ્યુમર"],
+    "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN", "સન ફાર્મા", "સનફાર્મા"],
+    "ITC": ["ITC", "આઈટીસી"], 
+    "ZOMATO": ["ZOMATO", "ઝોમેટો"], 
+    "BRITANNIA": ["BRITANNIA", "બ્રિટાનિયા"],
+    "DABUR": ["DABUR", "ડાબર"], 
+    "NMDC": ["NMDC", "એનએમડીસી"], 
+    "ADANIENT": ["ADANI", "ADANI ENT", "ADANI ENTERPRISES", "અદાણી એન્ટરપ્રાઈઝ", "અદાણી"],
+    "ADANIPORTS": ["ADANI PORT", "ADANI PORTS", "અદાણી પોર્ટ"],
+    "ASIANPAINT": ["ASIAN PAINT", "ASIAN PAINTS", "એશિયન પેઇન્ટ્સ"],
+    "BTC-USD": ["BTC", "BITCOIN", "BIT COIN", "બિટકોઇન", "બીટકોઈન"],
+    "ETH-USD": ["ETH", "ETHEREUM", "ઇથેરિયમ"],
+    "SOL-USD": ["SOL", "SOLANA", "સોલાના"],
+    "BNB-USD": ["BNB", "BINANCE", "બાઇનાન્સ"],
+    "XRP-USD": ["XRP", "RIPPLE", "રિપલ"]
 }
 
 def get_smart_symbol(query):
     query = query.strip().upper()
     if not query: return ""
     
-    # 1. Exact Match Check
     if query in FO_MASTER_LIST: return query
     
-    # 2. Exact Alias Check (L&T, Hitachi વગેરે ડાયરેક્ટ પકડશે)
     for symbol, aliases in FO_MASTER_LIST.items():
         if query in [a.upper() for a in aliases]:
             return symbol
             
-    # 3. Cleaned Match (સ્પેસ અને & કાઢીને)
     clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
     for symbol, aliases in FO_MASTER_LIST.items():
         if clean_query == symbol.replace("-", ""): return symbol
@@ -83,7 +88,6 @@ def get_smart_symbol(query):
             if clean_query == alias.replace(" ", "").replace("-", "").replace("&", ""):
                 return symbol
                 
-    # 4. Smart Prefix Match (ફક્ત 3 કે તેથી વધુ અક્ષર હોય તો જ, જેથી L&T નો ગોટાળો ના થાય)
     if len(clean_query) >= 3:
         for symbol, aliases in FO_MASTER_LIST.items():
             if symbol.replace("-", "").startswith(clean_query): return symbol
@@ -91,7 +95,6 @@ def get_smart_symbol(query):
                 if alias.replace(" ", "").replace("-", "").replace("&", "").startswith(clean_query):
                     return symbol
 
-    # 5. Word Search Match (દા.ત. "United" લખે તો "United Spirits" પકડી લેશે)
     for symbol, aliases in FO_MASTER_LIST.items():
         for alias in aliases:
             if query in alias.split(): return symbol
@@ -197,7 +200,7 @@ def get_terminal_data(original_query):
         
         return {
             "Symbol": raw_symbol,
-            "Query": original_query.upper(), 
+            "Query": original_query, # 💡 ગુજરાતીમાં લખ્યું હોય તો ગુજરાતીમાં જ દેખાડવા 
             "Price": round(last['Close'], 2),
             "Signal": act, "Class": cls, "Trend_Class": trend_class, "Arrow": arrow, "Currency": currency,
             "RSI": current_rsi, "MACD": "Bullish" if macd_bullish else "Bearish"
@@ -211,7 +214,7 @@ def get_terminal_data(original_query):
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 SMART ENGINE <br><small>10 SEC SYNC | V17.7</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.8</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -276,8 +279,9 @@ with left:
 
 # --- જમણી બાજુ: સ્માર્ટ સ્કેનર અને કમાન્ડ બોટ ---
 with right:
+    # 💡 પ્લેસહોલ્ડરમાં પણ ગુજરાતી ઉમેર્યું
     st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 5px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
-    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. hitachi, l&t)", placeholder="Type full or partial name...")
+    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. રિલાયન્સ, ટીસીએસ, sbi)", placeholder="English or ગુજરાતી નામ લખો...")
     
     if scan_target:
         with st.spinner(f"AI is hunting for '{scan_target}'..."):
@@ -286,7 +290,7 @@ with right:
                 card_color = "rgba(0,255,0,0.1)" if scan_data['Signal'] == 'BUY' else "rgba(255,0,0,0.1)" if scan_data['Signal'] == 'SELL' else "rgba(100,100,100,0.1)"
                 border_color = "#00ff00" if scan_data['Signal'] == 'BUY' else "#ff0000" if scan_data['Signal'] == 'SELL' else "#888"
                 
-                alias_text = f"Verified Target 🎯: {scan_data['Symbol']}" if scan_data['Symbol'] != scan_data['Query'] else ""
+                alias_text = f"Verified Target 🎯: {scan_data['Symbol']}" if scan_data['Symbol'] != scan_data['Query'].upper() else ""
                 
                 st.markdown(f"""
                 <div class='scan-card' style='background: {card_color}; border-color: {border_color};'>
