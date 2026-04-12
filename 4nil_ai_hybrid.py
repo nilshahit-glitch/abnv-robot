@@ -186,7 +186,7 @@ st.markdown("""
         border-radius: 8px !important;
     }
     div[data-baseweb="input"] input {
-        color: #e0e0e0 !important;
+        color: #ff9800 !important;
         font-family: 'Roboto Mono', sans-serif !important;
     }
     div[data-baseweb="input"] input::placeholder {
