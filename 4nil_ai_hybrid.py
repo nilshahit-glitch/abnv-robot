@@ -37,7 +37,6 @@ st.markdown("""
     
     .glass-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 10px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); }
     
-    /* 💡 Deep Scan Card Design */
     .scan-card { background: rgba(0, 255, 0, 0.05); border: 1px solid #00ff00; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 0 15px rgba(0,255,0,0.1); }
     .scan-title { font-family: 'Orbitron', sans-serif; color: #00ff00; font-size: 1.5em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid rgba(0,255,0,0.3); padding-bottom: 5px; }
     .scan-data { font-family: 'Roboto Mono', sans-serif; color: #fff; font-size: 1em; display: flex; justify-content: space-between; margin-bottom: 5px; }
@@ -70,26 +69,70 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. એડવાન્સ માર્કેટ એન્જિન (RSI + MACD)
+# ૩. SMART SEARCH ENGINE (બ્રહ્માસ્ત્ર)
+# ==========================================
+# 💡 અહીં તમે ગમે તેટલા નામ જાતે ઉમેરી શકો છો
+FO_MASTER_LIST = {
+    "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY"],
+    "INFY": ["INFY", "INFOSYS"],
+    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES"],
+    "TCS": ["TCS", "TATA CONSULTANCY"],
+    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO"],
+    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA"],
+    "MARUTI": ["MARUTI", "MARUTI SUZUKI"],
+    "BAJAJ-AUTO": ["BAJAJ", "BAJAJ AUTO", "BAJAJ-AUTO"],
+    "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK"],
+    "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK"],
+    "SBIN": ["SBI", "SBIN", "STATE BANK"],
+    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS"], # 💡 તમારું ઉદાહરણ
+    "BHEL": ["BHEL", "BHARAT HEAVY"],
+    "SAIL": ["SAIL", "STEEL AUTHORITY"],
+    "ITC": ["ITC"],
+    "ZOMATO": ["ZOMATO"],
+    "BTC-USD": ["BTC", "BITCOIN", "BIT COIN"],
+    "ETH-USD": ["ETH", "ETHEREUM"],
+    "SOL-USD": ["SOL", "SOLANA"],
+}
+
+def get_smart_symbol(query):
+    query = query.strip().upper()
+    
+    # 1. પહેલા ચેક કરો કે સીધો જ સિમ્બોલ લખ્યો છે?
+    if query in FO_MASTER_LIST.keys(): return query
+    
+    # 2. શોર્ટ-કટ યા સ્પેલિંગ મિસ્ટેક ચેક કરો
+    for symbol, aliases in FO_MASTER_LIST.items():
+        if query in aliases: return symbol
+        
+        # 3. જો અડધું નામ લખ્યું હોય (દા.ત. "force")
+        for alias in aliases:
+            if query in alias or alias in query:
+                return symbol
+                
+    # 4. જો કંઈ ના મળે તો યુઝરે જે લખ્યું છે તે જ મોકલી દો
+    return query
+
+# ==========================================
+# ૪. એડવાન્સ માર્કેટ એન્જિન (RSI + MACD)
 # ==========================================
 def get_terminal_data(ticker):
     try:
-        ticker = ticker.strip().upper()
+        # 💡 ડેટા ખેંચતા પહેલા સ્માર્ટ સર્ચ કરો
+        ticker = get_smart_symbol(ticker)
+        raw_symbol = ticker # સ્ક્રીન પર દેખાડવા માટે
+        
         if not ticker.endswith('.NS') and not ticker.startswith('^') and not ticker.endswith('-USD'): 
             ticker += '.NS'
             
         t = yf.Ticker(ticker)
-        # 💡 MACD અને RSI માટે ઓછામાં ઓછો 3 મહિનાનો ડેટા જોઈએ
         df = t.history(period="3mo", interval="1d")
         if df.empty or len(df) < 30: return None
         
         last = df.iloc[-1]
         prev_close = df.iloc[-2]['Close']
         
-        # 1. EMA 20
         ema20 = df['Close'].ewm(span=20, adjust=False).mean().iloc[-1]
         
-        # 2. RSI (14) Calculation
         delta = df['Close'].diff()
         up = delta.clip(lower=0)
         down = -1 * delta.clip(upper=0)
@@ -99,14 +142,12 @@ def get_terminal_data(ticker):
         rsi = 100 - (100 / (1 + rs))
         current_rsi = round(rsi.iloc[-1], 2)
         
-        # 3. MACD Calculation
         exp1 = df['Close'].ewm(span=12, adjust=False).mean()
         exp2 = df['Close'].ewm(span=26, adjust=False).mean()
         macd = exp1 - exp2
         signal = macd.ewm(span=9, adjust=False).mean()
         macd_bullish = macd.iloc[-1] > signal.iloc[-1]
         
-        # 💡 એડવાન્સ BUY/SELL લોજિક (3 કન્ફર્મેશન)
         if last['Close'] > ema20 and current_rsi < 70 and macd_bullish: act, cls = "BUY", "buy"
         elif last['Close'] < ema20 and current_rsi > 30 and not macd_bullish: act, cls = "SELL", "sell"
         else: act, cls = "NEUTRAL", "neutral"
@@ -116,7 +157,7 @@ def get_terminal_data(ticker):
         currency = "$" if "-USD" in ticker else "₹"
         
         return {
-            "Symbol": ticker.replace(".NS", "").replace("-USD", ""),
+            "Symbol": raw_symbol,
             "Price": round(last['Close'], 2),
             "Signal": act, "Class": cls, "Trend_Class": trend_class, "Arrow": arrow, "Currency": currency,
             "RSI": current_rsi, "MACD": "Bullish" if macd_bullish else "Bearish"
@@ -124,13 +165,13 @@ def get_terminal_data(ticker):
     except: return None
 
 # ==========================================
-# ૪. ડેશબોર્ડ લેઆઉટ
+# ૫. ડેશબોર્ડ લેઆઉટ
 # ==========================================
 
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 DEEP SCAN ENGINE <br><small>10 SEC SYNC | RSI+MACD</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 SMART ENGINE <br><small>10 SEC SYNC | AI ALIAS</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -153,7 +194,7 @@ def live_market_board():
     fo_sectors = {
         "IT": ['INFY', 'TCS', 'WIPRO', 'HCLTECH', 'TECHM'],
         "BANKING": ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK', 'KOTAKBANK'],
-        "AUTO": ['TATAMOTORS', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'TVSMOTOR'],
+        "AUTO": ['TATAMOTORS', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'FORCEMOT'], # 💡 Force Motors ઉમેર્યું
         "ENERGY": ['RELIANCE', 'ONGC', 'NTPC', 'POWERGRID', 'TATAPOWER']
     }
     
@@ -167,7 +208,6 @@ def live_market_board():
                 if d['Signal'] == 'BUY': buy_count += 1
                 elif d['Signal'] == 'SELL': sell_count += 1
                 
-                # AI ને હવે RSI અને MACD ની પણ ખબર પડશે!
                 live_context_data.append(f"{d['Symbol']}: {d['Price']} ({d['Signal']}, RSI:{d['RSI']})")
                 rows_html += f"<tr><td style='color:#ffffff; font-weight:bold;'>{d['Symbol']}</td><td>{d['Currency']}{d['Price']}</td><td><span class='action-badge {d['Class']}'>{d['Signal']}</span></td></tr>"
         
@@ -193,20 +233,20 @@ def live_market_board():
 with left:
     live_market_board()
 
-# --- જમણી બાજુ: માસ્ટર સ્કેનર અને કમાન્ડ બોટ ---
+# --- જમણી બાજુ: સ્માર્ટ સ્કેનર અને કમાન્ડ બોટ ---
 with right:
-    # 💡 નવું: 180 F&O સ્ટોક્સ માટે DEEP SCANNER
-    st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 5px;'>🔍 F&O DEEP SCAN</h4>", unsafe_allow_html=True)
-    scan_target = st.text_input("સ્ટોકનું નામ લખો (દા.ત. SBIN, BHEL)", placeholder="Type any F&O Symbol...")
+    st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 5px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
+    # 💡 પ્લેસહોલ્ડરમાં લખી દીધું કે અડધું નામ પણ ચાલશે
+    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. hcl, sbi, force)", placeholder="Type full or partial name...")
     
     if scan_target:
-        with st.spinner("Scanning Technicals..."):
+        with st.spinner("Searching Target..."):
             scan_data = get_terminal_data(scan_target)
             if scan_data:
-                # ગ્રીન કે રેડ કાર્ડ સ્ટોકના ટ્રેન્ડ મુજબ
-                card_color = "rgba(0,255,0,0.1)" if scan_data['Signal'] == 'BUY' else "rgba(255,0,0,0.1)"
-                border_color = "#00ff00" if scan_data['Signal'] == 'BUY' else "#ff0000"
+                card_color = "rgba(0,255,0,0.1)" if scan_data['Signal'] == 'BUY' else "rgba(255,0,0,0.1)" if scan_data['Signal'] == 'SELL' else "rgba(100,100,100,0.1)"
+                border_color = "#00ff00" if scan_data['Signal'] == 'BUY' else "#ff0000" if scan_data['Signal'] == 'SELL' else "#888"
                 
+                # 💡 કયું સાચું નામ સર્ચ થયું તે પણ બતાવશે
                 st.markdown(f"""
                 <div class='scan-card' style='background: {card_color}; border-color: {border_color};'>
                     <div class='scan-title'>{scan_data['Symbol']} <span style='float:right;'>{scan_data['Currency']}{scan_data['Price']}</span></div>
@@ -216,7 +256,7 @@ with right:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.error("સ્ટોક મળ્યો નથી. સાચો સિમ્બોલ નાખો.")
+                st.error("માફ કરજો, આ નામનો કોઈ સ્ટોક મળ્યો નથી.")
     
     st.markdown("<br><h4 style='font-family: Orbitron; color: #d4af37; margin-bottom: 10px;'>🤖 ABNV COMMAND CORE</h4>", unsafe_allow_html=True)
     if "messages" not in st.session_state: st.session_state.messages = []
@@ -237,7 +277,7 @@ with right:
                 ai_prompt = f"""
                 માલિક: નિલેશ શાહ અને વાસવી સેનગુપ્તા. 
                 કંપની: ABNV. 
-                માર્કેટ ડેટા: {market_status} (RSI 70 ઉપર હોય તો ઓવરબોટ, 30 નીચે ઓવરસોલ્ડ).
+                માર્કેટ ડેટા: {market_status}
                 તમારે એકદમ દેશી, ટૂંકો અને સીધો જવાબ આપવાનો છે. માત્ર 1 જ લાઈનમાં.
                 વાતચીત: {memory_string}
                 User: {pr}
