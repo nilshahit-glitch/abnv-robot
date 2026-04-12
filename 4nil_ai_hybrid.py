@@ -15,15 +15,22 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH & VASVI", layout="wide")
 
 # ==========================================
-# ૨. MASTER AI DICTIONARY
+# ૨. THE ULTIMATE MASTER AI DICTIONARY (100+ Stocks)
 # ==========================================
 FO_MASTER_LIST = {
+    # 💡 Indices (ઇન્ડેક્સ)
+    "^NSEI": ["NIFTY", "NIFTY 50", "NIFTY50", "નિફ્ટી", "નિફ્ટી 50"],
+    "^NSEBANK": ["BANKNIFTY", "BANK NIFTY", "બેંક નિફ્ટી", "બેંકનિફ્ટી"],
+    
+    # IT & Tech
     "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY", "એચસીએલ", "એચ સી એલ"],
     "INFY": ["INFY", "INFOSYS", "ઇન્ફોસીસ", "ઇન્ફોસિસ"],
     "TCS": ["TCS", "TATA CONSULTANCY", "ટીસીએસ", "ટાટા કન્સલ્ટન્સી"],
     "TECHM": ["TECH MAHINDRA", "TECHM", "ટેક મહિન્દ્રા"],
     "WIPRO": ["WIPRO", "વિપ્રો"],
+    "LTIM": ["LTI", "MINDTREE", "LTIMINDTREE", "માઇન્ડટ્રી"],
     
+    # Banks & Finance
     "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK", "એચડીએફસી", "એચ ડી એફ સી બેંક"],
     "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK", "આઈસીઆઈસીઆઈ"],
     "SBIN": ["SBI", "SBIN", "STATE BANK", "એસબીઆઈ", "સ્ટેટ બેંક"],
@@ -37,7 +44,15 @@ FO_MASTER_LIST = {
     "PFC": ["PFC", "POWER FINANCE", "પીએફસી"],
     "RECLTD": ["REC", "RECLTD", "આરઈસી"],
     "LICI": ["LIC", "LICI", "એલઆઈસી"],
+    "JIOFIN": ["JIO", "JIOFIN", "JIO FINANCE", "જીયો", "જિઓ"],
+    "IRFC": ["IRFC", "RAILWAY FINANCE", "આઈઆરએફસી"],
+    "IREDA": ["IREDA", "ઇરેડા"],
+    "CHOLAFIN": ["CHOLA", "CHOLAMANDALAM", "ચોલા"],
+    "BSE": ["BSE", "બીએસઈ"],
+    "MCX": ["MCX", "એમસીએક્સ"],
+    "CDSL": ["CDSL", "સીડીએસએલ"],
     
+    # Auto
     "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO", "ટાટા મોટર્સ"],
     "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM", "મહિન્દ્રા"],
     "MARUTI": ["MARUTI", "MARUTI SUZUKI", "મારુતિ", "મારુતી"],
@@ -48,7 +63,9 @@ FO_MASTER_LIST = {
     "HEROMOTOCO": ["HERO", "HEROMOTOCO", "હીરો"],
     "MRF": ["MRF", "એમઆરએફ"],
     "BOSCHLTD": ["BOSCH", "બોશ"],
+    "MOTHERSON": ["MOTHERSON", "MOTHERSUMI", "મધરસન"],
     
+    # Energy, Infra & Metals
     "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES", "રિલાયન્સ"],
     "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO", "એલ એન્ડ ટી", "લાર્સન"], 
     "BHEL": ["BHEL", "BHARAT HEAVY", "ભેલ"],
@@ -68,33 +85,57 @@ FO_MASTER_LIST = {
     "ULTRACEMCO": ["ULTRATECH", "ULTRACEMCO", "અલ્ટ્રાટેક"],
     "GRASIM": ["GRASIM", "ગ્રાસિમ"],
     "DLF": ["DLF", "ડીએલએફ"],
+    "ADANIENT": ["ADANI", "ADANI ENT", "ADANI ENTERPRISES", "અદાણી એન્ટરપ્રાઈઝ"],
+    "ADANIPORTS": ["ADANI PORT", "ADANI PORTS", "અદાણી પોર્ટ"],
+    "ADANIGREEN": ["ADANI GREEN", "અદાણી ગ્રીન"],
+    "ADANIPOWER": ["ADANI POWER", "અદાણી પાવર"],
+    "AWL": ["AWL", "ADANI WILMAR", "વિલ્મર"],
     
+    # FMCG, Pharma & Consumer (💡 HUL & United Spirits 100% Fixed Here)
+    "HINDUNILVR": ["HUL", "HINDUSTAN UNILEVER", "UNILEVER", "હિન્દુસ્તાન યુનિલિવર", "એચયુએલ"],
+    "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N", "UNITDSPR", "યુનાઇટેડ સ્પિરિટ", "મેકડોવેલ"],
     "ZYDUSLIFE": ["ZYDUS", "ZYDUSLIFE", "CADILA", "ઝાયડસ", "કેડિલા"], 
-    "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N", "યુનાઇટેડ સ્પિરિટ", "મેકડોવેલ"],
     "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC", "હિટાચી"],
     "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA", "ટાટા કન્ઝ્યુમર"],
     "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN", "સન ફાર્મા"],
     "TORNTPHARM": ["TORRENT", "TORNTPHARM", "ટોરેન્ટ ફાર્મા", "ટોરેન્ટ"],
     "APOLLOHOSP": ["APOLLO", "APOLLOHOSP", "અપોલો"],
-    "ITC": ["ITC", "આઈટીસી"], 
-    "ZOMATO": ["ZOMATO", "ઝોમેટો"], 
+    "CIPLA": ["CIPLA", "સિપ્લા"],
+    "DRREDDY": ["DR REDDY", "DRREDDY", "ડો રેડ્ડી"],
+    "DIVISLAB": ["DIVIS", "DIVISLAB", "દિવિસ", "ડીવીસ"],
+    "LUPIN": ["LUPIN", "લ્યુપિન"],
     "BRITANNIA": ["BRITANNIA", "બ્રિટાનિયા"],
     "DABUR": ["DABUR", "ડાબર"], 
-    "NMDC": ["NMDC", "એનએમડીસી"], 
-    "ADANIENT": ["ADANI", "ADANI ENT", "ADANI ENTERPRISES", "અદાણી એન્ટરપ્રાઈઝ"],
-    "ADANIPORTS": ["ADANI PORT", "ADANI PORTS", "અદાણી પોર્ટ"],
+    "MARICO": ["MARICO", "મેરિકો"],
+    "GODREJCP": ["GODREJ", "GODREJCP", "ગોદરેજ"],
+    "COLPAL": ["COLGATE", "COLPAL", "કોલગેટ"],
     "ASIANPAINT": ["ASIAN PAINT", "ASIAN PAINTS", "એશિયન પેઇન્ટ્સ"],
-    "TRENT": ["TRENT", "ટ્રેન્ટ"],
+    "BERGEPAINT": ["BERGER", "BERGEPAINT", "બર્જર પેઇન્ટ્સ"],
+    "PIDILITIND": ["PIDILITE", "FEVICOL", "પિડીલાઇટ", "ફેવિકોલ"],
+    "TITAN": ["TITAN", "ટાઇટન"],
+    "TRENT": ["TRENT", "ZUDIO", "ટ્રેન્ટ"],
+    "DMART": ["DMART", "AVENUE", "ડીમાર્ટ"],
+    
+    # New Tech & Others
+    "ZOMATO": ["ZOMATO", "ઝોમેટો"], 
+    "PAYTM": ["PAYTM", "પેટીએમ"],
+    "NYKAA": ["NYKAA", "નાયકા"],
+    "PBFINTECH": ["POLICY BAZAAR", "POLICYBAZAAR", "પોલિસી બાઝાર"],
+    "DELHIVERY": ["DELHIVERY", "દિલ્હીવેરી"],
     "DIXON": ["DIXON", "ડિક્સન"],
     "INDIGO": ["INDIGO", "INTERGLOBE", "ઇન્ડિગો", "ઈન્ડિગો"],
     "IRCTC": ["IRCTC", "આઈઆરસીટીસી"],
+    "RVNL": ["RVNL", "આરવીએનએલ"],
     "CUMMINSIND": ["CUMMINS", "કમિન્સ"],
+    "NMDC": ["NMDC", "એનએમડીસી"], 
     
+    # Crypto
     "BTC-USD": ["BTC", "BITCOIN", "BIT COIN", "બિટકોઇન", "બીટકોઈન"],
     "ETH-USD": ["ETH", "ETHEREUM", "ઇથેરિયમ"],
     "SOL-USD": ["SOL", "SOLANA", "સોલાના"],
     "BNB-USD": ["BNB", "BINANCE", "બાઇનાન્સ"],
-    "XRP-USD": ["XRP", "RIPPLE", "રિપલ"]
+    "XRP-USD": ["XRP", "RIPPLE", "રિપલ"],
+    "DOGE-USD": ["DOGE", "DOGECOIN", "ડોજકોઇન"]
 }
 
 def get_smart_symbol(query):
@@ -127,7 +168,7 @@ def get_smart_symbol(query):
     return query
 
 # ==========================================
-# ૩. ગ્લાસ UI સ્ટાઈલ (ઇનપુટ બોક્સના ફિક્સ સાથે)
+# ૩. ગ્લાસ UI સ્ટાઈલ
 # ==========================================
 st.markdown("""
     <style>
@@ -178,13 +219,26 @@ st.markdown("""
     .stChatMessage { background: rgba(20,20,20,0.5) !important; border-left: 2px solid #d4af37 !important; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
     .stChatMessage p { color: #eee !important; font-size: 0.95em; font-family: 'Roboto Mono', sans-serif; margin: 0; }
     .live-badge { text-align: center; padding: 8px; background: rgba(0, 255, 0, 0.05); border: 1px solid rgba(0,255,0,0.5); border-radius: 5px; color: #00ff00; font-family: 'Orbitron', sans-serif; font-size: 0.8em; margin-top: 20px; }
+    
+    /* 💡 ઇનપુટ બોક્સની ગ્લાસ ડિઝાઇન અને કલર */
+    div[data-baseweb="input"] {
+        background-color: rgba(20,20,20,0.8) !important;
+        border: 1px solid rgba(212,175,55,0.5) !important;
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="input"] input {
+        color: #d4af37 !important; 
+        font-family: 'Roboto Mono', sans-serif !important;
+    }
+    div[data-baseweb="input"] input::placeholder {
+        color: #888888 !important;
+    }
     </style>
-    """, unsafe_allow_html=True) 
+    """, unsafe_allow_html=True)
 
 # ==========================================
 # ૩.૧ AUTOCORRECT KILLER (JS HACK)
 # ==========================================
-# 💡 આ કોડ બ્રાઉઝરના કીબોર્ડને ઓટો-કરેક્ટ અને સ્પેલિંગ સુધારતા રોકશે
 st.components.v1.html(
     """
     <script>
@@ -258,7 +312,7 @@ def get_terminal_data(original_query):
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.11</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.12</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -325,7 +379,6 @@ with left:
 with right:
     st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 0px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
     
-    # 💡 ડીફોલ્ટ લેબલ હાઈડ કરી દીધું અને HTML માં મસ્ત ગોલ્ડન કલરનું લેબલ બનાવ્યું
     st.markdown("<p style='color: #d4af37; font-family: \"Roboto Mono\", sans-serif; font-size: 0.9em; margin-top: 5px; margin-bottom: 5px;'>શેર/સ્ટોકનું નામ લખો (દા.ત. રિલાયન્સ, zydus, sbi)</p>", unsafe_allow_html=True)
     scan_target = st.text_input("Hidden Label", placeholder="અંગ્રેજી કે ગુજરાતીમાં સ્ટોકનું નામ લખો...", label_visibility="collapsed")
     
@@ -350,7 +403,7 @@ with right:
             else:
                 st.error(f"માફ કરજો, '{scan_target}' નામનો કોઈ સ્ટોક મળ્યો નથી. સાચો સ્પેલિંગ લખવા વિનંતી.")
     
-    st.markdown("<br><h4 style='font-family: Orbitron; color: #d4af37; margin-bottom: 10px;'>🤖 ABNV COMMAND CORE</h4>", unsafe_allow_html=True)
+    st.markdown("<br><h4 style='font-family: Orbitron; color: #d4af37; margin-bottom: 10px;'>🤖 ABNV BOT CORE</h4>", unsafe_allow_html=True)
     if "messages" not in st.session_state: st.session_state.messages = []
     
     chat_box = st.container(height=450) 
