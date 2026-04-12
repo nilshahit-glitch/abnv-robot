@@ -69,26 +69,52 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# ૩. SMART SEARCH ENGINE (બ્રહ્માસ્ત્ર)
+# ૩. ULTRA-SMART SEARCH ENGINE (બ્રહ્માસ્ત્ર)
 # ==========================================
-# 💡 અહીં તમે ગમે તેટલા નામ જાતે ઉમેરી શકો છો
+# 💡 મેં અઘરા F&O સ્ટોક્સનું આખું લિસ્ટ અહિયાં એડ કરી દીધું છે!
 FO_MASTER_LIST = {
+    # IT & Tech
     "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY"],
     "INFY": ["INFY", "INFOSYS"],
-    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES"],
     "TCS": ["TCS", "TATA CONSULTANCY"],
-    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO"],
-    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA"],
-    "MARUTI": ["MARUTI", "MARUTI SUZUKI"],
-    "BAJAJ-AUTO": ["BAJAJ", "BAJAJ AUTO", "BAJAJ-AUTO"],
+    "TECHM": ["TECH MAHINDRA", "TECHM"],
+    
+    # Banks & Finance
     "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK"],
     "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK"],
     "SBIN": ["SBI", "SBIN", "STATE BANK"],
-    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS"], # 💡 તમારું ઉદાહરણ
+    "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN"],
+    "BAJAJFINSV": ["BAJAJ FINSERV", "FINSERV"],
+    "LTF": ["L&T FINANCE", "LNT FINANCE", "LTF"],
+    
+    # Auto
+    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO"],
+    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM"],
+    "MARUTI": ["MARUTI", "MARUTI SUZUKI"],
+    "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO"],
+    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS"],
+    
+    # Energy, Infra & Metals
+    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES"],
+    "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO"],
     "BHEL": ["BHEL", "BHARAT HEAVY"],
+    "BEL": ["BEL", "BHARAT ELECTRONICS"],
+    "HAL": ["HAL", "HINDUSTAN AERONAUTICS"],
     "SAIL": ["SAIL", "STEEL AUTHORITY"],
+    
+    # FMCG, Pharma & Others (અઘરા નામો)
+    "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL"], # 💡 તમારું ઉદાહરણ!
+    "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC"], # 💡 તમારું ઉદાહરણ!
+    "HITACHIEGY": ["HITACHI ENERGY", "POWERGRID HITACHI"],
+    "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA"],
+    "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN"],
+    "DRREDDY": ["DR REDDY", "REDDY"],
+    "ZEEL": ["ZEE", "ZEEL", "ZEE TV"],
+    "MOTHERSON": ["MOTHERSON", "SAMVARDHANA"],
     "ITC": ["ITC"],
     "ZOMATO": ["ZOMATO"],
+    
+    # Crypto
     "BTC-USD": ["BTC", "BITCOIN", "BIT COIN"],
     "ETH-USD": ["ETH", "ETHEREUM"],
     "SOL-USD": ["SOL", "SOLANA"],
@@ -97,20 +123,23 @@ FO_MASTER_LIST = {
 def get_smart_symbol(query):
     query = query.strip().upper()
     
-    # 1. પહેલા ચેક કરો કે સીધો જ સિમ્બોલ લખ્યો છે?
+    # 1. ડાયરેક્ટ મેચ
     if query in FO_MASTER_LIST.keys(): return query
     
-    # 2. શોર્ટ-કટ યા સ્પેલિંગ મિસ્ટેક ચેક કરો
+    # 💡 2. એડવાન્સ Fuzzy Logic: સ્પેસ, માઇનસ અને & કાઢીને ચેક કરો
+    clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
+    
     for symbol, aliases in FO_MASTER_LIST.items():
-        if query in aliases: return symbol
-        
-        # 3. જો અડધું નામ લખ્યું હોય (દા.ત. "force")
         for alias in aliases:
-            if query in alias or alias in query:
+            clean_alias = alias.replace(" ", "").replace("-", "").replace("&", "")
+            
+            # જો નામ એકદમ મેચ થતું હોય અથવા અડધું નામ અંદર આવી જતું હોય
+            if clean_query == clean_alias or clean_query in clean_alias or clean_alias in clean_query:
                 return symbol
                 
-    # 4. જો કંઈ ના મળે તો યુઝરે જે લખ્યું છે તે જ મોકલી દો
+    # 3. જો લિસ્ટમાં ના હોય તો યાહૂ ફાઇનાન્સ જાતે સંભાળી લેશે
     return query
+
 
 # ==========================================
 # ૪. એડવાન્સ માર્કેટ એન્જિન (RSI + MACD)
