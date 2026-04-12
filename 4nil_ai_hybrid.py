@@ -15,34 +15,46 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH & VASVI", layout="wide")
 
 # ==========================================
-# ૨. MASTER AI DICTIONARY (English + Gujarati)
+# ૨. MASTER AI DICTIONARY (Google-like Mapping)
 # ==========================================
-# 💡 અહીં બધા મોટા સ્ટોક્સના ગુજરાતી નામો પણ ઉમેરી દીધા છે!
+# 💡 40+ નવા F&O સ્ટોક્સ ઉમેર્યા છે (Zydus, LIC, PNB વગેરે)
 FO_MASTER_LIST = {
     "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY", "એચસીએલ", "એચ સી એલ"],
     "INFY": ["INFY", "INFOSYS", "ઇન્ફોસીસ", "ઇન્ફોસિસ"],
     "TCS": ["TCS", "TATA CONSULTANCY", "ટીસીએસ", "ટાટા કન્સલ્ટન્સી"],
     "TECHM": ["TECH MAHINDRA", "TECHM", "ટેક મહિન્દ્રા"],
     "WIPRO": ["WIPRO", "વિપ્રો"],
+    
     "HDFCBANK": ["HDFC", "HDFCBANK", "HDFC BANK", "એચડીએફસી", "એચ ડી એફ સી બેંક"],
-    "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK", "આઈસીઆઈસીઆઈ", "આઈ સી આઈ સી આઈ"],
+    "ICICIBANK": ["ICICI", "ICICIBANK", "ICICI BANK", "આઈસીઆઈસીઆઈ"],
     "SBIN": ["SBI", "SBIN", "STATE BANK", "એસબીઆઈ", "સ્ટેટ બેંક"],
-    "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN", "બજાજ ફાઇનાન્સ", "બજાજ ફાયનાન્સ"],
+    "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN", "બજાજ ફાઇનાન્સ"],
     "BAJAJFINSV": ["BAJAJ FINSERV", "FINSERV", "બજાજ ફિનસર્વ"],
     "AXISBANK": ["AXIS", "AXISBANK", "AXIS BANK", "એક્સિસ બેંક", "એક્સીસ"],
     "KOTAKBANK": ["KOTAK", "KOTAKBANK", "કોટક"],
     "INDUSINDBK": ["INDUSIND", "INDUSIND BANK", "ઇન્ડસઇન્ડ"],
-    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO", "ટાટા મોટર્સ", "ટાટામોટર્સ"],
-    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM", "મહિન્દ્રા", "મહિંદ્રા"],
+    "PNB": ["PNB", "PUNJAB NATIONAL", "પીએનબી", "પંજાબ નેશનલ"],
+    "BOB": ["BOB", "BANK OF BARODA", "બીઓબી", "બેંક ઓફ બરોડા"],
+    "PFC": ["PFC", "POWER FINANCE", "પીએફસી"],
+    "RECLTD": ["REC", "RECLTD", "આરઈસી"],
+    "LICI": ["LIC", "LICI", "એલઆઈસી"],
+    
+    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO", "ટાટા મોટર્સ"],
+    "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM", "મહિન્દ્રા"],
     "MARUTI": ["MARUTI", "MARUTI SUZUKI", "મારુતિ", "મારુતી"],
     "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO", "BAJAJAUTO", "બજાજ ઓટો"],
-    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS", "ફોર્સ મોટર્સ", "ફોર્સ"],
+    "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS", "ફોર્સ મોટર્સ"],
     "TVSMOTOR": ["TVS", "TVSMOTOR", "TVS MOTORS", "ટીવીએસ"],
     "EICHERMOT": ["EICHER", "EICHER MOTORS", "BULLET", "આઈશર"],
-    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES", "રિલાયન્સ", "રીલાયન્સ"],
+    "HEROMOTOCO": ["HERO", "HEROMOTOCO", "હીરો"],
+    "MRF": ["MRF", "એમઆરએફ"],
+    "BOSCHLTD": ["BOSCH", "બોશ"],
+    
+    "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES", "રિલાયન્સ"],
     "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO", "એલ એન્ડ ટી", "લાર્સન"], 
     "BHEL": ["BHEL", "BHARAT HEAVY", "ભેલ"],
     "BEL": ["BEL", "BHARAT ELECTRONICS", "બેલ"],
+    "HAL": ["HAL", "HINDUSTAN AERONAUTICS", "એચએએલ", "હિન્દુસ્તાન એરોનોટિક્સ"],
     "SAIL": ["SAIL", "STEEL AUTHORITY", "સેલ"],
     "ONGC": ["ONGC", "ઓએનજીસી"], 
     "NTPC": ["NTPC", "એનટીપીસી"], 
@@ -52,18 +64,34 @@ FO_MASTER_LIST = {
     "HINDALCO": ["HINDALCO", "હિન્દાલ્કો"], 
     "JSWSTEEL": ["JSW", "JSWSTEEL", "જેએસડબલ્યુ"], 
     "VEDL": ["VEDANTA", "VEDL", "વેદાન્તા"],
-    "UNITDSPR": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N", "યુનાઇટેડ સ્પિરિટ", "મેકડોવેલ"],
+    "COALINDIA": ["COAL INDIA", "COALINDIA", "કોલ ઇન્ડિયા"],
+    "AMBUJACEM": ["AMBUJA", "AMBUJACEM", "અંબુજા"],
+    "ULTRACEMCO": ["ULTRATECH", "ULTRACEMCO", "અલ્ટ્રાટેક"],
+    "GRASIM": ["GRASIM", "ગ્રાસિમ"],
+    "DLF": ["DLF", "ડીએલએફ"],
+    
+    # 💡 અહીં Zydus અને બીજા ફાર્મા/FMCG નામો એડ કર્યા છે!
+    "ZYDUSLIFE": ["ZYDUS", "ZYDUSLIFE", "CADILA", "ઝાયડસ", "કેડિલા"], 
+    "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N", "યુનાઇટેડ સ્પિરિટ", "મેકડોવેલ"],
     "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC", "હિટાચી"],
     "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA", "ટાટા કન્ઝ્યુમર"],
-    "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN", "સન ફાર્મા", "સનફાર્મા"],
+    "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN", "સન ફાર્મા"],
+    "TORNTPHARM": ["TORRENT", "TORNTPHARM", "ટોરેન્ટ ફાર્મા", "ટોરેન્ટ"],
+    "APOLLOHOSP": ["APOLLO", "APOLLOHOSP", "અપોલો"],
     "ITC": ["ITC", "આઈટીસી"], 
     "ZOMATO": ["ZOMATO", "ઝોમેટો"], 
     "BRITANNIA": ["BRITANNIA", "બ્રિટાનિયા"],
     "DABUR": ["DABUR", "ડાબર"], 
     "NMDC": ["NMDC", "એનએમડીસી"], 
-    "ADANIENT": ["ADANI", "ADANI ENT", "ADANI ENTERPRISES", "અદાણી એન્ટરપ્રાઈઝ", "અદાણી"],
+    "ADANIENT": ["ADANI", "ADANI ENT", "ADANI ENTERPRISES", "અદાણી એન્ટરપ્રાઈઝ"],
     "ADANIPORTS": ["ADANI PORT", "ADANI PORTS", "અદાણી પોર્ટ"],
     "ASIANPAINT": ["ASIAN PAINT", "ASIAN PAINTS", "એશિયન પેઇન્ટ્સ"],
+    "TRENT": ["TRENT", "ટ્રેન્ટ"],
+    "DIXON": ["DIXON", "ડિક્સન"],
+    "INDIGO": ["INDIGO", "INTERGLOBE", "ઇન્ડિગો", "ઈન્ડિગો"],
+    "IRCTC": ["IRCTC", "આઈઆરસીટીસી"],
+    "CUMMINSIND": ["CUMMINS", "કમિન્સ"],
+    
     "BTC-USD": ["BTC", "BITCOIN", "BIT COIN", "બિટકોઇન", "બીટકોઈન"],
     "ETH-USD": ["ETH", "ETHEREUM", "ઇથેરિયમ"],
     "SOL-USD": ["SOL", "SOLANA", "સોલાના"],
@@ -78,8 +106,7 @@ def get_smart_symbol(query):
     if query in FO_MASTER_LIST: return query
     
     for symbol, aliases in FO_MASTER_LIST.items():
-        if query in [a.upper() for a in aliases]:
-            return symbol
+        if query in [a.upper() for a in aliases]: return symbol
             
     clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
     for symbol, aliases in FO_MASTER_LIST.items():
@@ -200,7 +227,7 @@ def get_terminal_data(original_query):
         
         return {
             "Symbol": raw_symbol,
-            "Query": original_query, # 💡 ગુજરાતીમાં લખ્યું હોય તો ગુજરાતીમાં જ દેખાડવા 
+            "Query": original_query, 
             "Price": round(last['Close'], 2),
             "Signal": act, "Class": cls, "Trend_Class": trend_class, "Arrow": arrow, "Currency": currency,
             "RSI": current_rsi, "MACD": "Bullish" if macd_bullish else "Bearish"
@@ -214,7 +241,7 @@ def get_terminal_data(original_query):
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.8</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.9</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -279,9 +306,8 @@ with left:
 
 # --- જમણી બાજુ: સ્માર્ટ સ્કેનર અને કમાન્ડ બોટ ---
 with right:
-    # 💡 પ્લેસહોલ્ડરમાં પણ ગુજરાતી ઉમેર્યું
     st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 5px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
-    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. રિલાયન્સ, ટીસીએસ, sbi)", placeholder="English or ગુજરાતી નામ લખો...")
+    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. zydus, ડીએલએફ, lic)", placeholder="Google ની જેમ નામ લખો...")
     
     if scan_target:
         with st.spinner(f"AI is hunting for '{scan_target}'..."):
