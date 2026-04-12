@@ -15,7 +15,7 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH & VASVI", layout="wide")
 
 # ==========================================
-# ૨. MASTER AI DICTIONARY (English + Gujarati)
+# ૨. MASTER AI DICTIONARY
 # ==========================================
 FO_MASTER_LIST = {
     "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY", "એચસીએલ", "એચ સી એલ"],
@@ -127,7 +127,7 @@ def get_smart_symbol(query):
     return query
 
 # ==========================================
-# ૩. ગ્લાસ UI સ્ટાઈલ
+# ૩. ગ્લાસ UI સ્ટાઈલ (ઇનપુટ બોક્સના ફિક્સ સાથે)
 # ==========================================
 st.markdown("""
     <style>
@@ -178,6 +178,20 @@ st.markdown("""
     .stChatMessage { background: rgba(20,20,20,0.5) !important; border-left: 2px solid #d4af37 !important; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
     .stChatMessage p { color: #eee !important; font-size: 0.95em; font-family: 'Roboto Mono', sans-serif; margin: 0; }
     .live-badge { text-align: center; padding: 8px; background: rgba(0, 255, 0, 0.05); border: 1px solid rgba(0,255,0,0.5); border-radius: 5px; color: #00ff00; font-family: 'Orbitron', sans-serif; font-size: 0.8em; margin-top: 20px; }
+    
+    /* 💡 નવું: ઇનપુટ બોક્સની ગ્લાસ ડિઝાઇન અને કલર */
+    div[data-baseweb="input"] {
+        background-color: rgba(20,20,20,0.8) !important;
+        border: 1px solid rgba(212,175,55,0.5) !important;
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="input"] input {
+        color: #ffffff !important;
+        font-family: 'Roboto Mono', sans-serif !important;
+    }
+    div[data-baseweb="input"] input::placeholder {
+        color: #888888 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -239,7 +253,7 @@ def get_terminal_data(original_query):
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.10</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.11</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -304,9 +318,11 @@ with left:
 
 # --- જમણી બાજુ: સ્માર્ટ સ્કેનર અને કમાન્ડ બોટ ---
 with right:
-    # 💡 અહીં પ્લેસહોલ્ડર અને લેબલ બંને પર્ફેક્ટ રીતે સેટ કરી દીધા છે
-    st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 5px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
-    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. રિલાયન્સ, zydus, sbi)", placeholder="અંગ્રેજી કે ગુજરાતીમાં સ્ટોકનું નામ લખો...")
+    st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 0px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
+    
+    # 💡 ડીફોલ્ટ લેબલ હાઈડ કરી દીધું અને HTML માં મસ્ત ગોલ્ડન કલરનું લેબલ બનાવ્યું
+    st.markdown("<p style='color: #d4af37; font-family: \"Roboto Mono\", sans-serif; font-size: 0.9em; margin-top: 5px; margin-bottom: 5px;'>કોઈ પણ નામ લખો (દા.ત. રિલાયન્સ, zydus, sbi)</p>", unsafe_allow_html=True)
+    scan_target = st.text_input("Hidden Label", placeholder="અંગ્રેજી કે ગુજરાતીમાં સ્ટોકનું નામ લખો...", label_visibility="collapsed")
     
     if scan_target:
         with st.spinner(f"AI is hunting for '{scan_target}'..."):
