@@ -15,9 +15,8 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH & VASVI", layout="wide")
 
 # ==========================================
-# ૨. MASTER AI DICTIONARY (Google-like Mapping)
+# ૨. MASTER AI DICTIONARY (English + Gujarati)
 # ==========================================
-# 💡 40+ નવા F&O સ્ટોક્સ ઉમેર્યા છે (Zydus, LIC, PNB વગેરે)
 FO_MASTER_LIST = {
     "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY", "એચસીએલ", "એચ સી એલ"],
     "INFY": ["INFY", "INFOSYS", "ઇન્ફોસીસ", "ઇન્ફોસિસ"],
@@ -70,7 +69,6 @@ FO_MASTER_LIST = {
     "GRASIM": ["GRASIM", "ગ્રાસિમ"],
     "DLF": ["DLF", "ડીએલએફ"],
     
-    # 💡 અહીં Zydus અને બીજા ફાર્મા/FMCG નામો એડ કર્યા છે!
     "ZYDUSLIFE": ["ZYDUS", "ZYDUSLIFE", "CADILA", "ઝાયડસ", "કેડિલા"], 
     "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N", "યુનાઇટેડ સ્પિરિટ", "મેકડોવેલ"],
     "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC", "હિટાચી"],
@@ -241,7 +239,7 @@ def get_terminal_data(original_query):
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.9</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 GUJARATI SMART ENGINE <br><small>10 SEC SYNC | V17.10</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -306,8 +304,9 @@ with left:
 
 # --- જમણી બાજુ: સ્માર્ટ સ્કેનર અને કમાન્ડ બોટ ---
 with right:
+    # 💡 અહીં પ્લેસહોલ્ડર અને લેબલ બંને પર્ફેક્ટ રીતે સેટ કરી દીધા છે
     st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 5px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
-    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. zydus, ડીએલએફ, lic)", placeholder="Google ની જેમ નામ લખો...")
+    scan_target = st.text_input("કોઈ પણ નામ લખો (દા.ત. રિલાયન્સ, zydus, sbi)", placeholder="અંગ્રેજી કે ગુજરાતીમાં સ્ટોકનું નામ લખો...")
     
     if scan_target:
         with st.spinner(f"AI is hunting for '{scan_target}'..."):
@@ -348,7 +347,7 @@ with right:
                 
                 ai_prompt = f"""
                 માલિક: નિલેશ શાહ અને વાસવી સેનગુપ્તા. 
-                કંપની: ABNV. 
+                કંપની: ABNV BOT. 
                 માર્કેટ ડેટા: {market_status}
                 તમારે એકદમ દેશી, ટૂંકો અને સીધો જવાબ આપવાનો છે. માત્ર 1 જ લાઈનમાં.
                 વાતચીત: {memory_string}
