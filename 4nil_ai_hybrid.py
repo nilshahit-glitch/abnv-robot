@@ -321,7 +321,7 @@ with right:
     st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 0px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
     
     # 💡 ડીફોલ્ટ લેબલ હાઈડ કરી દીધું અને HTML માં મસ્ત ગોલ્ડન કલરનું લેબલ બનાવ્યું
-    st.markdown("<p style='color: #d4af37; font-family: \"Roboto Mono\", sans-serif; font-size: 0.9em; margin-top: 5px; margin-bottom: 5px;'>કોઈ પણ નામ લખો (દા.ત. રિલાયન્સ, zydus, sbi)</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #d4af37; font-family: \"Roboto Mono\", sans-serif; font-size: 0.9em; margin-top: 5px; margin-bottom: 5px;'>કોઈ પણ સ્ટોકનું નામ લખો (દા.ત. રિલાયન્સ, zydus, sbi)</p>", unsafe_allow_html=True)
     scan_target = st.text_input("Hidden Label", placeholder="અંગ્રેજી કે ગુજરાતીમાં સ્ટોકનું નામ લખો...", label_visibility="collapsed")
     
     if scan_target:
