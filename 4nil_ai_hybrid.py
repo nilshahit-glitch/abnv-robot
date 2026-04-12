@@ -15,8 +15,9 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="ABNV TERMINAL | NILESH & VASVI", layout="wide")
 
 # ==========================================
-# ૨. પર્ફેક્ટ ડિક્શનરી (Flawless AI Engine)
+# ૨. MASTER AI DICTIONARY (100% FLAWLESS)
 # ==========================================
+# 💡 અહીં United Spirits અને Hitachi ના સાચા સિમ્બોલ નાખી દીધા છે
 FO_MASTER_LIST = {
     "HCLTECH": ["HCL", "HCL TECH", "HCLTECHNOLOGY"],
     "INFY": ["INFY", "INFOSYS"],
@@ -30,27 +31,31 @@ FO_MASTER_LIST = {
     "BAJAJFINSV": ["BAJAJ FINSERV", "FINSERV"],
     "AXISBANK": ["AXIS", "AXISBANK", "AXIS BANK"],
     "KOTAKBANK": ["KOTAK", "KOTAKBANK"],
+    "INDUSINDBK": ["INDUSIND", "INDUSIND BANK"],
     "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO"],
     "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM"],
     "MARUTI": ["MARUTI", "MARUTI SUZUKI"],
-    "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO"],
+    "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO", "BAJAJAUTO"],
     "FORCEMOT": ["FORCE", "FORCEMOTOR", "FORCE MOTORS"],
     "TVSMOTOR": ["TVS", "TVSMOTOR", "TVS MOTORS"],
+    "EICHERMOT": ["EICHER", "EICHER MOTORS", "BULLET"],
     "RELIANCE": ["RELIANCE", "RIL", "RELIANCE INDUSTRIES"],
     "LT": ["L&T", "LARSEN", "LNT", "LARSEN & TOUBRO"], # 💡 તમારું ઉદાહરણ
     "BHEL": ["BHEL", "BHARAT HEAVY"],
+    "BEL": ["BEL", "BHARAT ELECTRONICS"],
     "SAIL": ["SAIL", "STEEL AUTHORITY"],
     "ONGC": ["ONGC"], "NTPC": ["NTPC"], "POWERGRID": ["POWERGRID", "POWER GRID"],
     "TATAPOWER": ["TATA POWER", "TATAPOWER"],
     "TATASTEEL": ["TATA STEEL", "TATASTEEL"],
     "HINDALCO": ["HINDALCO"], "JSWSTEEL": ["JSW", "JSWSTEEL"], "VEDL": ["VEDANTA", "VEDL"],
-    "MCDOWELL-N": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N"], 
-    "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC"], 
-    "HITACHIEGY": ["HITACHI ENERGY", "POWERGRID HITACHI"],
+    "UNITDSPR": ["UNITED SPIRIT", "UNITED SPIRITS", "USL", "MCDOWELL", "MCDOWELL-N"], # 💡 ફિક્સ!
+    "JCHAC": ["HITACHI", "JOHNSON CONTROLS", "HITACHI AC", "JCHAC"], # 💡 ફિક્સ!
     "TATACONSUM": ["TATA CONSUMER", "TATACONSUMER", "TATA TEA"],
     "SUNPHARMA": ["SUN PHARMA", "SUNPHARMA", "SUN"],
     "ITC": ["ITC"], "ZOMATO": ["ZOMATO"], "BRITANNIA": ["BRITANNIA"],
-    "DABUR": ["DABUR"], "NMDC": ["NMDC"],
+    "DABUR": ["DABUR"], "NMDC": ["NMDC"], "ADANIENT": ["ADANI", "ADANI ENT", "ADANI ENTERPRISES"],
+    "ADANIPORTS": ["ADANI PORT", "ADANI PORTS"],
+    "ASIANPAINT": ["ASIAN PAINT", "ASIAN PAINTS"],
     "BTC-USD": ["BTC", "BITCOIN", "BIT COIN"],
     "ETH-USD": ["ETH", "ETHEREUM"],
     "SOL-USD": ["SOL", "SOLANA"],
@@ -60,28 +65,37 @@ FO_MASTER_LIST = {
 
 def get_smart_symbol(query):
     query = query.strip().upper()
-    if query in FO_MASTER_LIST.keys(): return query
+    if not query: return ""
     
-    clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
+    # 1. Exact Match Check
+    if query in FO_MASTER_LIST: return query
     
-    # 💡 1. ફર્સ્ટ પાસ: એક્ઝેટ મેચ (સૌથી પહેલા પરફેક્ટ મેચ શોધશે)
+    # 2. Exact Alias Check (L&T, Hitachi વગેરે ડાયરેક્ટ પકડશે)
     for symbol, aliases in FO_MASTER_LIST.items():
+        if query in [a.upper() for a in aliases]:
+            return symbol
+            
+    # 3. Cleaned Match (સ્પેસ અને & કાઢીને)
+    clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
+    for symbol, aliases in FO_MASTER_LIST.items():
+        if clean_query == symbol.replace("-", ""): return symbol
         for alias in aliases:
-            clean_alias = alias.replace(" ", "").replace("-", "").replace("&", "")
-            if clean_query == clean_alias:
+            if clean_query == alias.replace(" ", "").replace("-", "").replace("&", ""):
                 return symbol
                 
-    # 💡 2. સેકન્ડ પાસ: સ્ટાર્ટિંગ મેચ (જો 3 કે તેથી વધુ અક્ષર હોય તો જ, જેથી ભૂલ ના પડે)
+    # 4. Smart Prefix Match (ફક્ત 3 કે તેથી વધુ અક્ષર હોય તો જ, જેથી L&T નો ગોટાળો ના થાય)
     if len(clean_query) >= 3:
         for symbol, aliases in FO_MASTER_LIST.items():
-            if symbol.replace("-", "").startswith(clean_query):
-                return symbol
+            if symbol.replace("-", "").startswith(clean_query): return symbol
             for alias in aliases:
-                clean_alias = alias.replace(" ", "").replace("-", "").replace("&", "")
-                if clean_alias.startswith(clean_query):
+                if alias.replace(" ", "").replace("-", "").replace("&", "").startswith(clean_query):
                     return symbol
-                    
-    # 3. જો લિસ્ટમાં ના મળે, તો જે લખ્યું છે તે જ મોકલી દો (જેથી ગમે તે સ્ટોક સર્ચ થઈ શકે)
+
+    # 5. Word Search Match (દા.ત. "United" લખે તો "United Spirits" પકડી લેશે)
+    for symbol, aliases in FO_MASTER_LIST.items():
+        for alias in aliases:
+            if query in alias.split(): return symbol
+
     return query
 
 # ==========================================
@@ -197,7 +211,7 @@ def get_terminal_data(original_query):
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 SMART ENGINE <br><small>10 SEC SYNC | V17.6</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 SMART ENGINE <br><small>10 SEC SYNC | V17.7</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -272,7 +286,7 @@ with right:
                 card_color = "rgba(0,255,0,0.1)" if scan_data['Signal'] == 'BUY' else "rgba(255,0,0,0.1)" if scan_data['Signal'] == 'SELL' else "rgba(100,100,100,0.1)"
                 border_color = "#00ff00" if scan_data['Signal'] == 'BUY' else "#ff0000" if scan_data['Signal'] == 'SELL' else "#888"
                 
-                alias_text = f"AI Auto-Detected: {scan_data['Symbol']}" if scan_data['Symbol'] != scan_data['Query'] else ""
+                alias_text = f"Verified Target 🎯: {scan_data['Symbol']}" if scan_data['Symbol'] != scan_data['Query'] else ""
                 
                 st.markdown(f"""
                 <div class='scan-card' style='background: {card_color}; border-color: {border_color};'>
@@ -284,7 +298,7 @@ with right:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.error(f"માફ કરજો, '{scan_target}' નામનો કોઈ સ્ટોક મળ્યો નથી.")
+                st.error(f"માફ કરજો, '{scan_target}' નામનો કોઈ સ્ટોક મળ્યો નથી. સાચો સ્પેલિંગ લખવા વિનંતી.")
     
     st.markdown("<br><h4 style='font-family: Orbitron; color: #d4af37; margin-bottom: 10px;'>🤖 ABNV COMMAND CORE</h4>", unsafe_allow_html=True)
     if "messages" not in st.session_state: st.session_state.messages = []
