@@ -263,6 +263,9 @@ def get_terminal_data(original_query):
         t = yf.Ticker(ticker)
         df = t.history(period="3mo", interval="1d")
         
+        # 🛠️ YAHOO BUG FIX: જો યાહૂ છેલ્લો ભાવ ખાલી (NaN) મોકલે, તો એ લાઈન કાઢી નાખો
+        df = df.dropna(subset=['Close'])
+        
         if df.empty or len(df) < 20: return None
         
         last = df.iloc[-1]
@@ -298,7 +301,7 @@ def get_terminal_data(original_query):
             "Price": round(last['Close'], 2),
             "Signal": act, "Class": cls, "Trend_Class": trend_class, "Arrow": arrow, "Currency": currency,
             "RSI": current_rsi, "MACD": "Bullish" if macd_bullish else "Bearish",
-            "Data": df # ચાર્ટિંગ માટે ડેટા પાસ કર્યો છે
+            "Data": df 
         }
     except: return None
 
@@ -330,13 +333,13 @@ def live_market_board():
     st.markdown(ticker_html, unsafe_allow_html=True)
 
     fo_sectors = {
-    "IT": ["INFY.NS", "TCS.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS"],
-    "ENERGY": ["RELIANCE.NS", "ONGC.NS", "NTPC.NS", "POWERGRID.NS", "TATAPOWER.NS"],
-    "BANKING": ["HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "AXISBANK.NS", "KOTAKBANK.NS"],
-    "FMCG": ["ITC.NS", "BRITANNIA.NS", "TATACONSUM.NS", "DABUR.NS"],
-    "AUTO": ["EICHERMOT.NS", "M&M.NS", "MARUTI.NS", "BAJAJ-AUTO.NS", "FORCEMOT.NS"],
-    "METALS": ["TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS", "NMDC.NS"]
-}
+        "IT": ["INFY", "TCS", "WIPRO", "HCLTECH", "TECHM"],
+        "ENERGY": ["RELIANCE", "ONGC", "NTPC", "POWERGRID", "TATAPOWER"],
+        "BANKING": ["HDFCBANK", "ICICIBANK", "SBIN", "AXISBANK", "KOTAKBANK"],
+        "FMCG": ["ITC", "BRITANNIA", "TATACONSUM", "DABUR"],
+        "AUTO": ["EICHERMOT", "M&M", "MARUTI", "BAJAJ-AUTO", "FORCEMOT"],
+        "METALS": ["TATASTEEL", "HINDALCO", "JSWSTEEL", "VEDL", "NMDC"]
+    }
     
     def build_table(sector_name, stocks, is_crypto=False):
         rows_html = ""
