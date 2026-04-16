@@ -329,7 +329,7 @@ def live_market_board():
     ticker_html += "</div></div>"
     st.markdown(ticker_html, unsafe_allow_html=True)
 
-    sectors = {
+    fo_sectors = {
     "IT": ["INFY.NS", "TCS.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS"],
     "ENERGY": ["RELIANCE.NS", "ONGC.NS", "NTPC.NS", "POWERGRID.NS", "TATAPOWER.NS"],
     "BANKING": ["HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "AXISBANK.NS", "KOTAKBANK.NS"],
