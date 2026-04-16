@@ -329,14 +329,14 @@ def live_market_board():
     ticker_html += "</div></div>"
     st.markdown(ticker_html, unsafe_allow_html=True)
 
-    fo_sectors = {
-        "IT": ['INFY', 'TCS', 'WIPRO', 'HCLTECH', 'TECHM'],
-        "BANKING": ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK', 'KOTAKBANK'],
-        "AUTO": ['EICHERMOT', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'FORCEMOT'],
-        "ENERGY": ['RELIANCE', 'ONGC', 'NTPC', 'POWERGRID', 'TATAPOWER'],
-        "FMCG": ['ITC', 'BRITANNIA', 'TATACONSUM', 'DABUR'],
-        "METALS": ['TATASTEEL', 'HINDALCO', 'JSWSTEEL', 'VEDL', 'NMDC']
-    }
+    sectors = {
+    "IT": ["INFY.NS", "TCS.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS"],
+    "ENERGY": ["RELIANCE.NS", "ONGC.NS", "NTPC.NS", "POWERGRID.NS", "TATAPOWER.NS"],
+    "BANKING": ["HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "AXISBANK.NS", "KOTAKBANK.NS"],
+    "FMCG": ["ITC.NS", "BRITANNIA.NS", "TATACONSUM.NS", "DABUR.NS"],
+    "AUTO": ["EICHERMOT.NS", "M&M.NS", "MARUTI.NS", "BAJAJ-AUTO.NS", "FORCEMOT.NS"],
+    "METALS": ["TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS", "NMDC.NS"]
+}
     
     def build_table(sector_name, stocks, is_crypto=False):
         rows_html = ""
