@@ -1,6 +1,10 @@
 streamlit
 yfinance
 pandas
+plotly
+xgboost
+scikit-learn
+joblib
+numpy
 google-genai
-gTTS
 python-dotenv

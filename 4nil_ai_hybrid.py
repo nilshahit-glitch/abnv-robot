@@ -2,8 +2,11 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import os
+import plotly.graph_objects as go
 from dotenv import load_dotenv
 from google import genai
+import joblib
+import numpy as np
 
 # ==========================================
 # ૧. સિસ્ટમ સેટઅપ
@@ -12,12 +15,11 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
-st.set_page_config(page_title="ABNV BOT TERMINAL | NILESH & VASVI", layout="wide")
+st.set_page_config(page_title="ABNV BOT TERMINAL | V7.0", layout="wide")
 
 # ==========================================
 # ૨. MASTER AI DICTIONARY (ફક્ત ડેશબોર્ડ માટે)
 # ==========================================
-# 💡 ટાટા મોટર્સ અને બીજા મુખ્ય સ્ટોક્સ તેમના અસલી યાહૂ સિમ્બોલ સાથે પાછા સેટ કર્યા છે
 FO_MASTER_LIST = {
     "^NSEI": ["NIFTY", "NIFTY 50", "NIFTY50", "નિફ્ટી", "નિફ્ટી 50"],
     "^NSEBANK": ["BANKNIFTY", "BANK NIFTY", "બેંક નિફ્ટી", "બેંકનિફ્ટી"],
@@ -32,7 +34,7 @@ FO_MASTER_LIST = {
     "BAJFINANCE": ["BAJAJ FINANCE", "BAJFIN", "બજાજ ફાઇનાન્સ"],
     "AXISBANK": ["AXIS", "AXISBANK", "AXIS BANK", "એક્સિસ બેંક", "એક્સીસ"],
     "KOTAKBANK": ["KOTAK", "KOTAKBANK", "કોટક"],
-    "TATAMOTORS": ["TATAMOTORS", "TATA MOTORS", "TAMO", "ટાટા મોટર્સ", "TATA MOTOR"],
+    "EICHERMOT": ["EICHERMOT", "EICHER MOTORS", "આઈશર", "આયશર મોટર્સ"],
     "M&M": ["M&M", "MAHINDRA", "MAHINDRA & MAHINDRA", "MNM", "મહિન્દ્રા"],
     "MARUTI": ["MARUTI", "MARUTI SUZUKI", "મારુતિ", "મારુતી"],
     "BAJAJ-AUTO": ["BAJAJ AUTO", "BAJAJ-AUTO", "BAJAJAUTO", "બજાજ ઓટો"],
@@ -69,12 +71,10 @@ def get_smart_symbol(query):
     query = query.strip().upper()
     if not query: return ""
     
-    # 1. Exact & Alias Match
     if query in FO_MASTER_LIST: return query
     for symbol, aliases in FO_MASTER_LIST.items():
         if query in [a.upper() for a in aliases]: return symbol
             
-    # 2. જૂનું પાવરફુલ ક્લીન મેચિંગ (જે તમને ગમતું હતું)
     clean_query = query.replace(" ", "").replace("-", "").replace("&", "")
     for symbol, aliases in FO_MASTER_LIST.items():
         if clean_query == symbol.replace("-", ""): return symbol
@@ -93,7 +93,6 @@ def get_smart_symbol(query):
         for alias in aliases:
             if query in alias.split(): return symbol
 
-    # 3. 🚀 GEMINI AI FALLBACK (જો ડિક્શનરીમાં ના મળે, તો સીધું AI ને પૂછો)
     try:
         ai_prompt = f"Find the official Yahoo Finance NSE ticker symbol for the Indian stock query: '{query}'. Return ONLY the ticker symbol without '.NS'. For example, if query is 'ટાટા મોટર્સ', return TATAMOTORS. If 'hul', return HINDUNILVR. Return only the exact word."
         res = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=ai_prompt)
@@ -105,7 +104,71 @@ def get_smart_symbol(query):
     return query
 
 # ==========================================
-# ૩.૧ ગ્લાસ UI સ્ટાઈલ
+# ૩.૧ SMART CHARTING & ML ENGINE (NEW ✨)
+# ==========================================
+def create_interactive_chart(df, symbol):
+    fig = go.Figure(data=[go.Candlestick(
+        x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name="Price"
+    )])
+    # EMA 20 Indicator
+    fig.add_trace(go.Scatter(x=df.index, y=df['Close'].ewm(span=20, adjust=False).mean(), 
+                             line=dict(color='#d4af37', width=1.5), name='EMA 20'))
+    fig.update_layout(
+        template="plotly_dark", title=f"📊 LIVE CHART: {symbol}", yaxis_title="Price",
+        xaxis_rangeslider_visible=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(family="Orbitron", size=10, color="#d4af37"), height=350, margin=dict(l=0, r=0, t=30, b=0)
+    )
+    return fig
+
+# ==========================================
+# ૩.૨ PRO ML PREDICTION ENGINE (Smart Money + Non-Linear)
+# ==========================================
+def get_ml_prediction(df):
+    try:
+        # ૧. PRO મોડેલ અને સ્કેલર લોડ કરો
+        scaler = joblib.load('abnv_pro_scaler.pkl')
+        knn_model = joblib.load('abnv_pro_knn.pkl')
+        xgb_model = joblib.load('abnv_pro_xgb.pkl')
+        
+        # ૨. લાઈવ ડેટા પર એડવાન્સ ગણિત (Feature Engineering)
+        df = df.copy()
+        df['Log_Return'] = np.log(df['Close'] / df['Close'].shift(1))
+        df['VPT'] = df['Volume'] * df['Log_Return']
+        df['VPT_EMA'] = df['VPT'].ewm(span=21, adjust=False).mean()
+        
+        df['Vol_Short'] = df['Close'].rolling(window=5).std()
+        df['Vol_Long'] = df['Close'].rolling(window=21).std()
+        df['Volatility_Ratio'] = df['Vol_Short'] / df['Vol_Long']
+        
+        df['Momentum_10'] = df['Close'] - df['Close'].shift(10)
+        df['Acceleration'] = df['Momentum_10'] - df['Momentum_10'].shift(10)
+        
+        # છેલ્લી લાઈવ કેન્ડલનો ડેટા ખેંચો
+        latest_data = df[['Log_Return', 'VPT_EMA', 'Volatility_Ratio', 'Momentum_10', 'Acceleration']].iloc[-1].values.reshape(1, -1)
+        
+        if np.isnan(latest_data).any():
+            return "PRO AI: WAITING ⏳", "Processing Deep Market Data...", "#888888"
+            
+        # ૩. ડેટા સ્કેલિંગ અને પાવરફુલ પ્રેડિક્શન
+        latest_scaled = scaler.transform(latest_data)
+        knn_pred = knn_model.predict(latest_scaled)[0]
+        xgb_pred = xgb_model.predict(latest_scaled)[0]
+        
+        # ૪. INSTITUTIONAL CONFLUENCE LOGIC (ફાઇનલ ડિસિઝન)
+        if knn_pred == 1 and xgb_pred == 1:
+            return "PRO AI: STRONG BUY 🚀", "Smart Money + Momentum Confirmed", "#00ff00"
+        elif knn_pred == 0 and xgb_pred == 0:
+            return "PRO AI: STRONG SELL 🔻", "Distribution & Down Trend", "#ff0000"
+        elif knn_pred == 1 and xgb_pred == 0:
+            return "PRO AI: ACCUMULATION 🔼", "Smart Money Buying (KNN Bullish)", "#d4af37" # ગોલ્ડન કલર
+        else:
+            return "PRO AI: WEAK SELL 🔽", "Momentum Fading (XGB Bearish)", "#ff8800" # ઓરેન્જ કલર
+            
+    except Exception as e:
+        return "PRO AI SYSTEM OFFLINE", f"Error: {str(e)[:20]}", "#888888"
+    
+# ==========================================
+# ૩.૨ ગ્લાસ UI સ્ટાઈલ
 # ==========================================
 st.markdown("""
     <style>
@@ -127,7 +190,7 @@ st.markdown("""
     
     .glass-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 10px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); }
     
-    .scan-card { background: rgba(0, 255, 0, 0.05); border: 1px solid #00ff00; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 0 15px rgba(0,255,0,0.1); }
+    .scan-card { background: rgba(0, 255, 0, 0.05); border: 1px solid #00ff00; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 0 15px rgba(0,255,0,0.1); }
     .scan-title { font-family: 'Orbitron', sans-serif; color: #00ff00; font-size: 1.5em; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid rgba(0,255,0,0.3); padding-bottom: 5px; }
     .scan-alias { font-family: 'Roboto Mono', sans-serif; font-size: 0.8em; color: #d4af37; margin-bottom: 15px; }
     .scan-data { font-family: 'Roboto Mono', sans-serif; color: #fff; font-size: 1em; display: flex; justify-content: space-between; margin-bottom: 5px; }
@@ -172,7 +235,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.components.v1.html(
+st.html(
     """
     <script>
     const inputs = window.parent.document.querySelectorAll('input[type=text]');
@@ -183,8 +246,7 @@ st.components.v1.html(
         inputs[i].setAttribute('autocomplete', 'off');
     }
     </script>
-    """,
-    height=0, width=0
+    """
 )
 
 # ==========================================
@@ -201,7 +263,6 @@ def get_terminal_data(original_query):
         t = yf.Ticker(ticker)
         df = t.history(period="3mo", interval="1d")
         
-        # 💡 જો Yahoo ડેટા ના આપે, તો સ્પષ્ટ ખબર પડે
         if df.empty or len(df) < 20: return None
         
         last = df.iloc[-1]
@@ -236,7 +297,8 @@ def get_terminal_data(original_query):
             "Query": original_query, 
             "Price": round(last['Close'], 2),
             "Signal": act, "Class": cls, "Trend_Class": trend_class, "Arrow": arrow, "Currency": currency,
-            "RSI": current_rsi, "MACD": "Bullish" if macd_bullish else "Bearish"
+            "RSI": current_rsi, "MACD": "Bullish" if macd_bullish else "Bearish",
+            "Data": df # ચાર્ટિંગ માટે ડેટા પાસ કર્યો છે
         }
     except: return None
 
@@ -247,7 +309,7 @@ def get_terminal_data(original_query):
 with st.sidebar:
     st.markdown("""<div class="abnv-logo">ABNV</div><div class="abnv-sub">Trading Terminal</div>""", unsafe_allow_html=True)
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
-    st.markdown("<div class='live-badge'>🟢 TRUE AI SMART ENGINE <br><small>10 SEC SYNC | V17.13</small></div>", unsafe_allow_html=True)
+    st.markdown("<div class='live-badge'>🟢 TRUE AI SMART ENGINE <br><small>10 SEC SYNC | V7.0</small></div>", unsafe_allow_html=True)
 
 left, right = st.columns([2, 1])
 
@@ -270,7 +332,7 @@ def live_market_board():
     fo_sectors = {
         "IT": ['INFY', 'TCS', 'WIPRO', 'HCLTECH', 'TECHM'],
         "BANKING": ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK', 'KOTAKBANK'],
-        "AUTO": ['TATAMOTORS', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'FORCEMOT'],
+        "AUTO": ['EICHERMOT', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'FORCEMOT'],
         "ENERGY": ['RELIANCE', 'ONGC', 'NTPC', 'POWERGRID', 'TATAPOWER'],
         "FMCG": ['ITC', 'BRITANNIA', 'TATACONSUM', 'DABUR'],
         "METALS": ['TATASTEEL', 'HINDALCO', 'JSWSTEEL', 'VEDL', 'NMDC']
@@ -310,20 +372,20 @@ def live_market_board():
 with left:
     live_market_board()
 
-# --- જમણી બાજુ: સ્માર્ટ સ્કેનર અને કમાન્ડ બોટ ---
+# --- જમણી બાજુ: સ્માર્ટ સ્કેનર, ચાર્ટ અને કમાન્ડ બોટ ---
 with right:
     st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 0px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
-    
     st.markdown("<p style='color: #d4af37; font-family: \"Roboto Mono\", sans-serif; font-size: 0.9em; margin-top: 5px; margin-bottom: 5px;'>શેર/સ્ટોકનું નામ લખો (દા.ત. રિલાયન્સ, zydus, sbi)</p>", unsafe_allow_html=True)
+    
     scan_target = st.text_input("Hidden Label", placeholder="અંગ્રેજી કે ગુજરાતીમાં સ્ટોકનું નામ લખો...", label_visibility="collapsed")
     
     if scan_target:
         with st.spinner(f"AI is hunting for '{scan_target}'..."):
             scan_data = get_terminal_data(scan_target)
             if scan_data:
+                # ૧. જૂનું સ્કેન કાર્ડ
                 card_color = "rgba(0,255,0,0.1)" if scan_data['Signal'] == 'BUY' else "rgba(255,0,0,0.1)" if scan_data['Signal'] == 'SELL' else "rgba(100,100,100,0.1)"
                 border_color = "#00ff00" if scan_data['Signal'] == 'BUY' else "#ff0000" if scan_data['Signal'] == 'SELL' else "#888"
-                
                 alias_text = f"Verified Target 🎯: {scan_data['Symbol']}" if scan_data['Symbol'] != scan_data['Query'].upper() else ""
                 
                 st.markdown(f"""
@@ -335,6 +397,20 @@ with right:
                     <div class='scan-data'><span>System Signal:</span> <span class='action-badge {scan_data["Class"]}'>{scan_data["Signal"]}</span></div>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                # ૨. નવું ML પ્રેડિક્શન બેજ
+                df = scan_data["Data"]
+                ml_sig, ml_conf, ml_col = get_ml_prediction(df)
+                st.markdown(f"""
+                <div style='background:rgba(0,0,0,0.5); border: 1px solid {ml_col}; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px;'>
+                    <span style='font-family: Orbitron; font-size: 1.1em; font-weight: bold; color: {ml_col};'>{ml_sig}</span><br>
+                    <span style='font-family: Roboto Mono; font-size: 0.8em; color: #888;'>{ml_conf}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # ૩. ઇન્ટરેક્ટિવ ચાર્ટ
+                st.plotly_chart(create_interactive_chart(df, scan_data['Symbol']), width='stretch')
+                
             else:
                 st.error(f"માફ કરજો, '{scan_target}' નો ડેટા મળ્યો નહિ. (કદાચ ABNV Finance સર્વર ડાઉન છે અથવા સ્પેલિંગ ખોટો છે).")
     
