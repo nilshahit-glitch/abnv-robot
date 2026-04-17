@@ -337,8 +337,10 @@ left, right = st.columns([2, 1])
 
 @st.fragment(run_every=10)
 def live_market_board():
+    # 🧠 મેમરી
     if "active_trades" not in st.session_state: st.session_state.active_trades = {}
     if "trade_history" not in st.session_state: st.session_state.trade_history = []
+    
     global live_context_data 
     live_context_data = []
     
@@ -362,8 +364,7 @@ def live_market_board():
         "METALS": ["TATASTEEL", "HINDALCO", "JSWSTEEL", "VEDL", "NMDC"]
     }
     
-    hot_buys = []
-    hot_sells = []
+    hot_buys, hot_sells = [], []
     
     def build_table(sector_name, stocks, is_crypto=False):
         rows_html = ""
@@ -376,41 +377,36 @@ def live_market_board():
                 cp = d['Price']
                 ml_sig, ml_conf, ml_col, ml_tg, ml_sl = get_ml_prediction(df)
                 
-                # 🧠 DYNAMIC TARGET & SMART EXIT LOGIC 🧠
+                # 🛑 TRADE LOCKING & AUTO-EXIT LOGIC
                 if sym in st.session_state.active_trades:
                     trade = st.session_state.active_trades[sym]
                     ttype = trade['type']
+                    trade['target'] = ml_tg # Dynamic Target Update
                     
-                    # ૧. ટાર્ગેટ અને કોન્ફિડન્સ લાઈવ અપડેટ કરો (SL ફિક્સ રહેશે)
-                    trade['target'] = ml_tg
-                    trade['conf'] = ml_conf
-                    
-                    # ૨. એક્ઝિટ ચેકિંગ (લક્ષ્ય, નુકસાન અથવા AI ની સલાહ)
                     if ttype == 'BUY':
                         if cp >= trade['target']:
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'DYNAMIC TARGET 🎯', 'color': '#00ff00'})
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'TARGET 🎯', 'color': '#00ff00'})
                             del st.session_state.active_trades[sym]
                         elif cp <= trade['sl']:
                             st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'SL HIT 🔻', 'color': '#ff4b4b'})
                             del st.session_state.active_trades[sym]
-                        elif "SELL" in ml_sig: # અચાનક માર્કેટ પડે તો AI જાતે કાપી નાખશે
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'AI SMART EXIT 🧠', 'color': '#d4af37'})
+                        elif "SELL" in ml_sig:
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'SMART EXIT 🧠', 'color': '#d4af37'})
                             del st.session_state.active_trades[sym]
 
                     elif ttype == 'SELL':
                         if cp <= trade['target']:
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'DYNAMIC TARGET 🎯', 'color': '#00ff00'})
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'TARGET 🎯', 'color': '#00ff00'})
                             del st.session_state.active_trades[sym]
                         elif cp >= trade['sl']:
                             st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'SL HIT 🔻', 'color': '#ff4b4b'})
                             del st.session_state.active_trades[sym]
-                        elif "BUY" in ml_sig: # અચાનક માર્કેટ વધે તો AI જાતે કાપી નાખશે
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'AI SMART EXIT 🧠', 'color': '#d4af37'})
+                        elif "BUY" in ml_sig:
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'SMART EXIT 🧠', 'color': '#d4af37'})
                             del st.session_state.active_trades[sym]
 
                 is_active = sym in st.session_state.active_trades
                 
-                # ૩. નવી એન્ટ્રી
                 if not is_active:
                     if "STRONG BUY" in ml_sig:
                         st.session_state.active_trades[sym] = {'type': 'BUY', 'entry': cp, 'target': ml_tg, 'sl': ml_sl, 'conf': ml_conf}
@@ -419,14 +415,12 @@ def live_market_board():
                         st.session_state.active_trades[sym] = {'type': 'SELL', 'entry': cp, 'target': ml_tg, 'sl': ml_sl, 'conf': ml_conf}
                         is_active = True
 
-                # ૪. ગ્રાફિક્સ માટે ડેટા સેટ કરો
                 if is_active:
                     trade = st.session_state.active_trades[sym]
                     d['Entry'], d['SL'], d['Target'] = trade['entry'], trade['sl'], trade['target']
                     d['ML_Conf'] = trade['conf']
                     d['ML_Signal'] = f"🔴 LIVE {trade['type']}"
                     d['ML_Color'] = "#00ff00" if trade['type'] == 'BUY' else "#ff0000"
-                    
                     if trade['type'] == 'BUY': hot_buys.append(d)
                     else: hot_sells.append(d)
                 else:
@@ -444,24 +438,20 @@ def live_market_board():
         
         summary_html = f"<span class='sector-summary'>(કુલ: {total}) | <span class='s-buy'>B: {buy_count}</span> | <span class='s-sell'>S: {sell_count}</span></span>"
         header_class = "crypto-header" if is_crypto else "sector-header"
-        
         html = f"<div class='glass-card'><table class='f-o-table'><thead><tr><th colspan='3' class='{header_class}'>{sector_name} {summary_html}</th></tr></thead><tbody>{rows_html}</tbody></table></div>"
         return html
 
     sectors = list(fo_sectors.items())
     half = len(sectors) // 2
-    
     grid_html_1, grid_html_2 = "", ""
     for name, stocks in sectors[:half]: grid_html_1 += build_table(name, stocks)
     for name, stocks in sectors[half:]: grid_html_2 += build_table(name, stocks)
     
-    # 🎯 Action Radar (Update UI for Fixed SL and Dynamic Target)
     st.markdown("<h4 style='font-family: Orbitron; color: #fff; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;'>⚡ PRO AI ACTION RADAR</h4>", unsafe_allow_html=True)
     radar_html = "<div style='display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 15px;'>"
     
     for b in hot_buys[:5]: 
         radar_html += f"<div style='min-width: 170px; background: linear-gradient(145deg, rgba(0,255,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #00ff00; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,255,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{b['Symbol']}</div><div style='color: #00ff00; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{b['Price']}</div><div style='display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:5px; border-radius:5px; font-size:0.7em; margin-bottom:8px; font-family:Roboto Mono; border: 1px solid rgba(0,255,0,0.2);'><div style='color:#ccc;'><b>En:</b><br>{b['Entry']}</div><div style='color:#ff4b4b;'><b>SL🔒:</b><br>{b['SL']}</div><div style='color:#00ff00;'><b>Tg🔄:</b><br>{b['Target']}</div></div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{b['ML_Conf']}</div><div style='background: {b['ML_Color']}; color: #000; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{b['ML_Signal']}</div></div>"
-        
     for s in hot_sells[:5]: 
         radar_html += f"<div style='min-width: 170px; background: linear-gradient(145deg, rgba(255,0,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #ff0000; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(255,0,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{s['Symbol']}</div><div style='color: #ff4b4b; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{s['Price']}</div><div style='display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:5px; border-radius:5px; font-size:0.7em; margin-bottom:8px; font-family:Roboto Mono; border: 1px solid rgba(255,0,0,0.2);'><div style='color:#ccc;'><b>En:</b><br>{s['Entry']}</div><div style='color:#ff4b4b;'><b>SL🔒:</b><br>{s['SL']}</div><div style='color:#00ff00;'><b>Tg🔄:</b><br>{s['Target']}</div></div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{s['ML_Conf']}</div><div style='background: {s['ML_Color']}; color: #fff; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{s['ML_Signal']}</div></div>"
         
@@ -469,32 +459,28 @@ def live_market_board():
     radar_html += "</div>"
     st.markdown(radar_html, unsafe_allow_html=True)
     
-    # 📊 Tables
     st.markdown(f"<div class='radar-grid'><div>{grid_html_1}</div><div>{grid_html_2}</div></div>", unsafe_allow_html=True)
     
     crypto_list = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD', 'XRP-USD']
     st.markdown(build_table("HIGH VOLUME CRYPTO (24x7)", crypto_list, is_crypto=True), unsafe_allow_html=True)
 
-    # 📜 TODAY'S TRADE BOOK
+    # 📜 નવું: કાયમી દેખાતી TRADE BOOK
+    st.markdown("<h4 style='font-family: Orbitron; color: #d4af37; margin-top: 25px; border-bottom: 1px solid #444; padding-bottom: 5px;'>📜 TODAY'S CLOSED TRADES (HISTORY)</h4>", unsafe_allow_html=True)
     if st.session_state.trade_history:
-        st.markdown("<h4 style='font-family: Orbitron; color: #d4af37; margin-top: 25px; border-bottom: 1px solid #444; padding-bottom: 5px;'>📜 TODAY'S TRADE BOOK</h4>", unsafe_allow_html=True)
         tb_html = "<div class='glass-card'><table class='f-o-table' style='text-align: center; width: 100%;'><thead><tr><th style='text-align:center;'>STOCK</th><th style='text-align:center;'>TYPE</th><th style='text-align:center;'>ENTRY</th><th style='text-align:center;'>EXIT</th><th style='text-align:center;'>RESULT</th></tr></thead><tbody>"
         for th in reversed(st.session_state.trade_history): 
             tb_html += f"<tr><td style='font-weight:bold; color:#fff;'>{th['symbol']}</td><td>{th['type']}</td><td>₹{th['entry']}</td><td>₹{th['exit']}</td><td><span style='color:{th['color']}; font-weight:bold; font-family:Orbitron;'>{th['result']}</span></td></tr>"
         tb_html += "</tbody></table></div>"
         st.markdown(tb_html, unsafe_allow_html=True)
+    else:
+        # જો ટ્રેડ ના હોય તો આ મેસેજ દેખાશે
+        st.markdown("<div style='color: #888; padding: 15px; text-align: center; border: 1px dashed #444; border-radius: 5px; font-family: Roboto Mono;'>હજી સુધી કોઈ ટ્રેડ ક્લોઝ થયો નથી. સિસ્ટમ લાઈવ ટાર્ગેટ અને SL ટ્રેક કરી રહી છે...</div>", unsafe_allow_html=True)
 
-# ⚠️ ખાસ ધ્યાન: આ નીચેની લાઈનોમાં આગળ બિલકુલ જગ્યા (Space) નથી છોડવાની, તેને છેક ડાબી બાજુ અડાડીને જ રાખવાની છે.
+# ----------------- LEFT AND RIGHT COLUMNS -----------------
+
 with left:
     live_market_board()
 
-# --- જમણી બાજુ: સ્માર્ટ સ્કેનર ---
-with right:
-    st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 0px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
-
-# --- જમણી બાજુ: સ્માર્ટ સ્કેનર ---
-with right:
-    st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 0px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
 with right:
     st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 0px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
     st.markdown("<p style='color: #d4af37; font-family: \"Roboto Mono\", sans-serif; font-size: 0.9em; margin-top: 5px; margin-bottom: 5px;'>શેર/સ્ટોકનું નામ લખો (દા.ત. રિલાયન્સ, zydus, sbi)</p>", unsafe_allow_html=True)
@@ -505,7 +491,6 @@ with right:
         with st.spinner(f"AI is hunting for '{scan_target}'..."):
             scan_data = get_terminal_data(scan_target)
             if scan_data:
-                # ૧. જૂનું સ્કેન કાર્ડ
                 card_color = "rgba(0,255,0,0.1)" if scan_data['Signal'] == 'BUY' else "rgba(255,0,0,0.1)" if scan_data['Signal'] == 'SELL' else "rgba(100,100,100,0.1)"
                 border_color = "#00ff00" if scan_data['Signal'] == 'BUY' else "#ff0000" if scan_data['Signal'] == 'SELL' else "#888"
                 alias_text = f"Verified Target 🎯: {scan_data['Symbol']}" if scan_data['Symbol'] != scan_data['Query'].upper() else ""
@@ -520,22 +505,26 @@ with right:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # ૨. નવું ML પ્રેડિક્શન બેજ
                 df = scan_data["Data"]
-                ml_sig, ml_conf, ml_col = get_ml_prediction(df)
+                ml_sig, ml_conf, ml_col, ml_tg, ml_sl = get_ml_prediction(df)
                 st.markdown(f"""
                 <div style='background:rgba(0,0,0,0.5); border: 1px solid {ml_col}; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px;'>
                     <span style='font-family: Orbitron; font-size: 1.1em; font-weight: bold; color: {ml_col};'>{ml_sig}</span><br>
                     <span style='font-family: Roboto Mono; font-size: 0.8em; color: #888;'>{ml_conf}</span>
+                    <div style='display:flex; justify-content:space-around; margin-top:10px; font-family:Roboto Mono; font-size:0.85em; border-top:1px dashed #444; padding-top:8px;'>
+                        <span style='color:#ccc;'>Entry:<br>{scan_data['Price']}</span>
+                        <span style='color:#ff4b4b;'>SL:<br>{ml_sl}</span>
+                        <span style='color:#00ff00;'>Target:<br>{ml_tg}</span>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # ૩. ઇન્ટરેક્ટિવ ચાર્ટ
-                st.plotly_chart(create_interactive_chart(df, scan_data['Symbol']), width='stretch')
+                st.plotly_chart(create_interactive_chart(df, scan_data['Symbol']), use_container_width=True)
                 
             else:
-                st.error(f"માફ કરજો, '{scan_target}' નો ડેટા મળ્યો નહિ. (કદાચ ABNV Finance સર્વર ડાઉન છે અથવા સ્પેલિંગ ખોટો છે).")
+                st.error(f"માફ કરજો, '{scan_target}' નો ડેટા મળ્યો નહિ.")
     
+    # 🤖 ABNV BOT CORE (Chatbot)
     st.markdown("<br><h4 style='font-family: Orbitron; color: #d4af37; margin-bottom: 10px;'>🤖 ABNV BOT CORE</h4>", unsafe_allow_html=True)
     if "messages" not in st.session_state: st.session_state.messages = []
     
@@ -552,15 +541,7 @@ with right:
                 memory_string = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages[-4:]])
                 market_status = " | ".join(live_context_data) if 'live_context_data' in globals() else "લોડિંગ..."
                 
-                ai_prompt = f"""
-                માલિક: નિલેશ શાહ અને વાસવી સેનગુપ્તા. 
-                કંપની: ABNV BOT. 
-                માર્કેટ ડેટા: {market_status}
-                તમારે એકદમ દેશી, ટૂંકો અને સીધો જવાબ આપવાનો છે. માત્ર 1 જ લાઈનમાં.
-                વાતચીત: {memory_string}
-                User: {pr}
-                Assistant: 
-                """
+                ai_prompt = f"માલિક: નિલેશ શાહ અને વાસવી સેનગુપ્તા. કંપની: ABNV BOT. માર્કેટ ડેટા: {market_status}. તમારે એકદમ દેશી, ટૂંકો અને સીધો જવાબ આપવાનો છે. વાતચીત: {memory_string}. User: {pr}. Assistant:"
                 res = client.models.generate_content(model="gemini-3.1-flash-lite-preview", contents=ai_prompt)
                 reply = res.text.replace("Assistant:", "").strip() if (res and res.text) else "સર્વરમાં લોચો છે."
                 st.markdown(reply)
