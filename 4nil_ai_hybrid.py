@@ -337,6 +337,8 @@ left, right = st.columns([2, 1])
 
 @st.fragment(run_every=10)
 def live_market_board():
+    if "active_trades" not in st.session_state: st.session_state.active_trades = {}
+    if "trade_history" not in st.session_state: st.session_state.trade_history = []
     global live_context_data 
     live_context_data = []
     
