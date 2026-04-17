@@ -482,13 +482,13 @@ def live_market_board():
         tb_html += "</tbody></table></div>"
         st.markdown(tb_html, unsafe_allow_html=True)
 
-# --- જમણી બાજુ: સ્માર્ટ સ્કેનર, ચાર્ટ અને કમાન્ડ બોટ ---
-# 📜 TODAY'S TRADE BOOK (આ તમારું છેલ્લું ફંક્શન પૂરું થયું)
-    if st.session_state.trade_history:
-        # ... 
-
+# ⚠️ ખાસ ધ્યાન: આ નીચેની લાઈનોમાં આગળ બિલકુલ જગ્યા (Space) નથી છોડવાની, તેને છેક ડાબી બાજુ અડાડીને જ રાખવાની છે.
 with left:
     live_market_board()
+
+# --- જમણી બાજુ: સ્માર્ટ સ્કેનર ---
+with right:
+    st.markdown("<h4 style='font-family: Orbitron; color: #00ff00; margin-bottom: 0px;'>🔍 F&O SMART SCAN</h4>", unsafe_allow_html=True)
 
 # --- જમણી બાજુ: સ્માર્ટ સ્કેનર ---
 with right:
