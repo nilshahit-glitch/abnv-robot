@@ -370,25 +370,75 @@ def live_market_board():
             d = get_terminal_data(s)
             if d: 
                 df = d['Data']
+                sym = d['Symbol']
+                cp = d['Price']
                 ml_sig, ml_conf, ml_col, ml_tg, ml_sl = get_ml_prediction(df)
                 
-                d['ML_Signal'] = ml_sig.replace("PRO AI: ", "")
-                d['ML_Conf'] = ml_conf
-                d['ML_Color'] = ml_col
-                d['Entry'] = d['Price']
-                d['SL'] = ml_sl
-                d['Target'] = ml_tg
+                # 🧠 DYNAMIC TARGET & SMART EXIT LOGIC 🧠
+                if sym in st.session_state.active_trades:
+                    trade = st.session_state.active_trades[sym]
+                    ttype = trade['type']
+                    
+                    # ૧. ટાર્ગેટ અને કોન્ફિડન્સ લાઈવ અપડેટ કરો (SL ફિક્સ રહેશે)
+                    trade['target'] = ml_tg
+                    trade['conf'] = ml_conf
+                    
+                    # ૨. એક્ઝિટ ચેકિંગ (લક્ષ્ય, નુકસાન અથવા AI ની સલાહ)
+                    if ttype == 'BUY':
+                        if cp >= trade['target']:
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'DYNAMIC TARGET 🎯', 'color': '#00ff00'})
+                            del st.session_state.active_trades[sym]
+                        elif cp <= trade['sl']:
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'SL HIT 🔻', 'color': '#ff4b4b'})
+                            del st.session_state.active_trades[sym]
+                        elif "SELL" in ml_sig: # અચાનક માર્કેટ પડે તો AI જાતે કાપી નાખશે
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'AI SMART EXIT 🧠', 'color': '#d4af37'})
+                            del st.session_state.active_trades[sym]
+
+                    elif ttype == 'SELL':
+                        if cp <= trade['target']:
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'DYNAMIC TARGET 🎯', 'color': '#00ff00'})
+                            del st.session_state.active_trades[sym]
+                        elif cp >= trade['sl']:
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'SL HIT 🔻', 'color': '#ff4b4b'})
+                            del st.session_state.active_trades[sym]
+                        elif "BUY" in ml_sig: # અચાનક માર્કેટ વધે તો AI જાતે કાપી નાખશે
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'AI SMART EXIT 🧠', 'color': '#d4af37'})
+                            del st.session_state.active_trades[sym]
+
+                is_active = sym in st.session_state.active_trades
+                
+                # ૩. નવી એન્ટ્રી
+                if not is_active:
+                    if "STRONG BUY" in ml_sig:
+                        st.session_state.active_trades[sym] = {'type': 'BUY', 'entry': cp, 'target': ml_tg, 'sl': ml_sl, 'conf': ml_conf}
+                        is_active = True
+                    elif "STRONG SELL" in ml_sig:
+                        st.session_state.active_trades[sym] = {'type': 'SELL', 'entry': cp, 'target': ml_tg, 'sl': ml_sl, 'conf': ml_conf}
+                        is_active = True
+
+                # ૪. ગ્રાફિક્સ માટે ડેટા સેટ કરો
+                if is_active:
+                    trade = st.session_state.active_trades[sym]
+                    d['Entry'], d['SL'], d['Target'] = trade['entry'], trade['sl'], trade['target']
+                    d['ML_Conf'] = trade['conf']
+                    d['ML_Signal'] = f"🔴 LIVE {trade['type']}"
+                    d['ML_Color'] = "#00ff00" if trade['type'] == 'BUY' else "#ff0000"
+                    
+                    if trade['type'] == 'BUY': hot_buys.append(d)
+                    else: hot_sells.append(d)
+                else:
+                    d['Entry'], d['SL'], d['Target'] = cp, ml_sl, ml_tg
+                    d['ML_Conf'] = ml_conf
+                    d['ML_Signal'] = ml_sig.replace("PRO AI: ", "")
+                    d['ML_Color'] = ml_col
 
                 total += 1
-                if "BUY" in ml_sig or "ACCUMULATION" in ml_sig: 
-                    buy_count += 1
-                    if "STRONG BUY" in ml_sig: hot_buys.append(d) 
-                elif "SELL" in ml_sig: 
-                    sell_count += 1
-                    if "STRONG SELL" in ml_sig: hot_sells.append(d)
+                if "BUY" in ml_sig or (is_active and trade['type'] == 'BUY'): buy_count += 1
+                elif "SELL" in ml_sig or (is_active and trade['type'] == 'SELL'): sell_count += 1
                     
-                live_context_data.append(f"{d['Symbol']}: {d['Price']} ({ml_sig})")
-                rows_html += f"<tr><td style='color:#ffffff; font-weight:bold;'>{d['Symbol']}</td><td>{d['Currency']}{d['Price']}</td><td><span style='color:{ml_col}; font-weight:bold; font-family: Orbitron; font-size:0.75em;'>{d['ML_Signal']}</span></td></tr>"
+                live_context_data.append(f"{sym}: {cp} ({d['ML_Signal']})")
+                rows_html += f"<tr><td style='color:#ffffff; font-weight:bold;'>{sym}</td><td>{d['Currency']}{cp}</td><td><span style='color:{d['ML_Color']}; font-weight:bold; font-family: Orbitron; font-size:0.75em;'>{d['ML_Signal']}</span></td></tr>"
         
         summary_html = f"<span class='sector-summary'>(કુલ: {total}) | <span class='s-buy'>B: {buy_count}</span> | <span class='s-sell'>S: {sell_count}</span></span>"
         header_class = "crypto-header" if is_crypto else "sector-header"
@@ -399,33 +449,38 @@ def live_market_board():
     sectors = list(fo_sectors.items())
     half = len(sectors) // 2
     
-    # 🧠 ૧. પહેલા ડેટા સ્કેન કરો (જેથી Hot Stocks પકડાઈ જાય)
     grid_html_1, grid_html_2 = "", ""
     for name, stocks in sectors[:half]: grid_html_1 += build_table(name, stocks)
     for name, stocks in sectors[half:]: grid_html_2 += build_table(name, stocks)
     
-    # 🎯 ૨. હવે Action Radar પ્રિન્ટ કરો (અપડેટેડ ટાર્ગેટ અને SL સાથે)
+    # 🎯 Action Radar (Update UI for Fixed SL and Dynamic Target)
     st.markdown("<h4 style='font-family: Orbitron; color: #fff; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;'>⚡ PRO AI ACTION RADAR</h4>", unsafe_allow_html=True)
     radar_html = "<div style='display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 15px;'>"
     
     for b in hot_buys[:5]: 
-        radar_html += f"<div style='min-width: 170px; background: linear-gradient(145deg, rgba(0,255,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #00ff00; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,255,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{b['Symbol']}</div><div style='color: #00ff00; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{b['Price']}</div><div style='display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:5px; border-radius:5px; font-size:0.7em; margin-bottom:8px; font-family:Roboto Mono; border: 1px solid rgba(0,255,0,0.2);'><div style='color:#ccc;'><b>En:</b><br>{b['Entry']}</div><div style='color:#ff4b4b;'><b>SL:</b><br>{b['SL']}</div><div style='color:#00ff00;'><b>Tg:</b><br>{b['Target']}</div></div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{b['ML_Conf']}</div><div style='background: {b['ML_Color']}; color: #000; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{b['ML_Signal']}</div></div>"
+        radar_html += f"<div style='min-width: 170px; background: linear-gradient(145deg, rgba(0,255,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #00ff00; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,255,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{b['Symbol']}</div><div style='color: #00ff00; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{b['Price']}</div><div style='display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:5px; border-radius:5px; font-size:0.7em; margin-bottom:8px; font-family:Roboto Mono; border: 1px solid rgba(0,255,0,0.2);'><div style='color:#ccc;'><b>En:</b><br>{b['Entry']}</div><div style='color:#ff4b4b;'><b>SL🔒:</b><br>{b['SL']}</div><div style='color:#00ff00;'><b>Tg🔄:</b><br>{b['Target']}</div></div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{b['ML_Conf']}</div><div style='background: {b['ML_Color']}; color: #000; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{b['ML_Signal']}</div></div>"
         
     for s in hot_sells[:5]: 
-        radar_html += f"<div style='min-width: 170px; background: linear-gradient(145deg, rgba(255,0,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #ff0000; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(255,0,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{s['Symbol']}</div><div style='color: #ff4b4b; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{s['Price']}</div><div style='display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:5px; border-radius:5px; font-size:0.7em; margin-bottom:8px; font-family:Roboto Mono; border: 1px solid rgba(255,0,0,0.2);'><div style='color:#ccc;'><b>En:</b><br>{s['Entry']}</div><div style='color:#ff4b4b;'><b>SL:</b><br>{s['SL']}</div><div style='color:#00ff00;'><b>Tg:</b><br>{s['Target']}</div></div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{s['ML_Conf']}</div><div style='background: {s['ML_Color']}; color: #fff; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{s['ML_Signal']}</div></div>"
+        radar_html += f"<div style='min-width: 170px; background: linear-gradient(145deg, rgba(255,0,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #ff0000; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(255,0,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{s['Symbol']}</div><div style='color: #ff4b4b; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{s['Price']}</div><div style='display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:5px; border-radius:5px; font-size:0.7em; margin-bottom:8px; font-family:Roboto Mono; border: 1px solid rgba(255,0,0,0.2);'><div style='color:#ccc;'><b>En:</b><br>{s['Entry']}</div><div style='color:#ff4b4b;'><b>SL🔒:</b><br>{s['SL']}</div><div style='color:#00ff00;'><b>Tg🔄:</b><br>{s['Target']}</div></div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{s['ML_Conf']}</div><div style='background: {s['ML_Color']}; color: #fff; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{s['ML_Signal']}</div></div>"
         
-    if not hot_buys and not hot_sells: radar_html += "<div style='color: #888; padding: 10px;'>અત્યારે કોઈ ક્લિયર ટ્રેન્ડ નથી. AI સ્કેન કરી રહ્યું છે...</div>"
+    if not hot_buys and not hot_sells: radar_html += "<div style='color: #888; padding: 10px;'>અત્યારે કોઈ લાઈવ ટ્રેડ એક્ટિવ નથી...</div>"
     radar_html += "</div>"
     st.markdown(radar_html, unsafe_allow_html=True)
     
-    # 📊 ૩. છેલ્લે ટેબલ પ્રિન્ટ કરો
+    # 📊 Tables
     st.markdown(f"<div class='radar-grid'><div>{grid_html_1}</div><div>{grid_html_2}</div></div>", unsafe_allow_html=True)
     
     crypto_list = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD', 'XRP-USD']
     st.markdown(build_table("HIGH VOLUME CRYPTO (24x7)", crypto_list, is_crypto=True), unsafe_allow_html=True)
 
-with left:
-    live_market_board()
+    # 📜 TODAY'S TRADE BOOK
+    if st.session_state.trade_history:
+        st.markdown("<h4 style='font-family: Orbitron; color: #d4af37; margin-top: 25px; border-bottom: 1px solid #444; padding-bottom: 5px;'>📜 TODAY'S TRADE BOOK</h4>", unsafe_allow_html=True)
+        tb_html = "<div class='glass-card'><table class='f-o-table' style='text-align: center; width: 100%;'><thead><tr><th style='text-align:center;'>STOCK</th><th style='text-align:center;'>TYPE</th><th style='text-align:center;'>ENTRY</th><th style='text-align:center;'>EXIT</th><th style='text-align:center;'>RESULT</th></tr></thead><tbody>"
+        for th in reversed(st.session_state.trade_history): 
+            tb_html += f"<tr><td style='font-weight:bold; color:#fff;'>{th['symbol']}</td><td>{th['type']}</td><td>₹{th['entry']}</td><td>₹{th['exit']}</td><td><span style='color:{th['color']}; font-weight:bold; font-family:Orbitron;'>{th['result']}</span></td></tr>"
+        tb_html += "</tbody></table></div>"
+        st.markdown(tb_html, unsafe_allow_html=True)
 
 # --- જમણી બાજુ: સ્માર્ટ સ્કેનર, ચાર્ટ અને કમાન્ડ બોટ ---
 with right:
