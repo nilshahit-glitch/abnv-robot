@@ -370,68 +370,56 @@ def live_market_board():
             d = get_terminal_data(s)
             if d: 
                 df = d['Data']
-                # 🧠 હવે ડાયરેક્ટ મશીન લર્નિંગમાંથી જ Target અને SL આવશે
                 ml_sig, ml_conf, ml_col, ml_tg, ml_sl = get_ml_prediction(df)
                 
                 d['ML_Signal'] = ml_sig.replace("PRO AI: ", "")
                 d['ML_Conf'] = ml_conf
                 d['ML_Color'] = ml_col
+                d['Entry'] = d['Price']
+                d['SL'] = ml_sl
+                d['Target'] = ml_tg
 
                 total += 1
-                
                 if "BUY" in ml_sig or "ACCUMULATION" in ml_sig: 
                     buy_count += 1
-                    d['Entry'] = d['Price']
-                    d['SL'] = ml_sl        # AI એ જાતે ગણેલો SL
-                    d['Target'] = ml_tg    # AI એ જાતે ગણેલો Target
                     if "STRONG BUY" in ml_sig: hot_buys.append(d) 
-                
                 elif "SELL" in ml_sig: 
                     sell_count += 1
-                    d['Entry'] = d['Price']
-                    d['SL'] = ml_sl        # AI એ જાતે ગણેલો SL
-                    d['Target'] = ml_tg    # AI એ જાતે ગણેલો Target
                     if "STRONG SELL" in ml_sig: hot_sells.append(d)
                     
                 live_context_data.append(f"{d['Symbol']}: {d['Price']} ({ml_sig})")
-                
                 rows_html += f"<tr><td style='color:#ffffff; font-weight:bold;'>{d['Symbol']}</td><td>{d['Currency']}{d['Price']}</td><td><span style='color:{ml_col}; font-weight:bold; font-family: Orbitron; font-size:0.75em;'>{d['ML_Signal']}</span></td></tr>"
         
         summary_html = f"<span class='sector-summary'>(કુલ: {total}) | <span class='s-buy'>B: {buy_count}</span> | <span class='s-sell'>S: {sell_count}</span></span>"
         header_class = "crypto-header" if is_crypto else "sector-header"
         
-        html = f"<div class='glass-card'><table class='f-o-table'><thead><tr><th colspan='3' class='{header_class}'>{sector_name} {summary_html}</th></tr></thead><tbody>"
-        html += rows_html + "</tbody></table></div>"
+        html = f"<div class='glass-card'><table class='f-o-table'><thead><tr><th colspan='3' class='{header_class}'>{sector_name} {summary_html}</th></tr></thead><tbody>{rows_html}</tbody></table></div>"
         return html
 
     sectors = list(fo_sectors.items())
+    half = len(sectors) // 2
     
-    # ==========================================
-    # 🔥 AI ACTION RADAR (GRAPHICAL LIST)
-    # ==========================================
+    # 🧠 ૧. પહેલા ડેટા સ્કેન કરો (જેથી Hot Stocks પકડાઈ જાય)
+    grid_html_1, grid_html_2 = "", ""
+    for name, stocks in sectors[:half]: grid_html_1 += build_table(name, stocks)
+    for name, stocks in sectors[half:]: grid_html_2 += build_table(name, stocks)
+    
+    # 🎯 ૨. હવે Action Radar પ્રિન્ટ કરો (અપડેટેડ ટાર્ગેટ અને SL સાથે)
     st.markdown("<h4 style='font-family: Orbitron; color: #fff; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;'>⚡ PRO AI ACTION RADAR</h4>", unsafe_allow_html=True)
-    
     radar_html = "<div style='display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 15px;'>"
     
     for b in hot_buys[:5]: 
-        radar_html += f"<div style='min-width: 150px; background: linear-gradient(145deg, rgba(0,255,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #00ff00; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,255,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{b['Symbol']}</div><div style='color: #00ff00; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{b['Price']}</div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{b['ML_Conf']}</div><div style='background: {b['ML_Color']}; color: #000; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{b['ML_Signal']}</div></div>"
+        radar_html += f"<div style='min-width: 170px; background: linear-gradient(145deg, rgba(0,255,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #00ff00; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,255,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{b['Symbol']}</div><div style='color: #00ff00; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{b['Price']}</div><div style='display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:5px; border-radius:5px; font-size:0.7em; margin-bottom:8px; font-family:Roboto Mono; border: 1px solid rgba(0,255,0,0.2);'><div style='color:#ccc;'><b>En:</b><br>{b['Entry']}</div><div style='color:#ff4b4b;'><b>SL:</b><br>{b['SL']}</div><div style='color:#00ff00;'><b>Tg:</b><br>{b['Target']}</div></div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{b['ML_Conf']}</div><div style='background: {b['ML_Color']}; color: #000; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{b['ML_Signal']}</div></div>"
         
     for s in hot_sells[:5]: 
-        radar_html += f"<div style='min-width: 150px; background: linear-gradient(145deg, rgba(255,0,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #ff0000; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(255,0,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{s['Symbol']}</div><div style='color: #ff4b4b; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{s['Price']}</div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{s['ML_Conf']}</div><div style='background: {s['ML_Color']}; color: #fff; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{s['ML_Signal']}</div></div>"
+        radar_html += f"<div style='min-width: 170px; background: linear-gradient(145deg, rgba(255,0,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #ff0000; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(255,0,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{s['Symbol']}</div><div style='color: #ff4b4b; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{s['Price']}</div><div style='display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:5px; border-radius:5px; font-size:0.7em; margin-bottom:8px; font-family:Roboto Mono; border: 1px solid rgba(255,0,0,0.2);'><div style='color:#ccc;'><b>En:</b><br>{s['Entry']}</div><div style='color:#ff4b4b;'><b>SL:</b><br>{s['SL']}</div><div style='color:#00ff00;'><b>Tg:</b><br>{s['Target']}</div></div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{s['ML_Conf']}</div><div style='background: {s['ML_Color']}; color: #fff; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{s['ML_Signal']}</div></div>"
         
-    if not hot_buys and not hot_sells:
-        radar_html += "<div style='color: #888; font-family: Roboto Mono; font-size: 0.9em; padding: 10px;'>અત્યારે કોઈ ક્લિયર ટ્રેન્ડ નથી. AI સ્કેન કરી રહ્યું છે...</div>"
-        
+    if not hot_buys and not hot_sells: radar_html += "<div style='color: #888; padding: 10px;'>અત્યારે કોઈ ક્લિયર ટ્રેન્ડ નથી. AI સ્કેન કરી રહ્યું છે...</div>"
     radar_html += "</div>"
     st.markdown(radar_html, unsafe_allow_html=True)
     
-    half = len(sectors) // 2
-    grid_html = "<div class='radar-grid'><div>"
-    for name, stocks in sectors[:half]: grid_html += build_table(name, stocks)
-    grid_html += "</div><div>"
-    for name, stocks in sectors[half:]: grid_html += build_table(name, stocks)
-    grid_html += "</div></div>"
-    st.markdown(grid_html, unsafe_allow_html=True)
+    # 📊 ૩. છેલ્લે ટેબલ પ્રિન્ટ કરો
+    st.markdown(f"<div class='radar-grid'><div>{grid_html_1}</div><div>{grid_html_2}</div></div>", unsafe_allow_html=True)
     
     crypto_list = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD', 'XRP-USD']
     st.markdown(build_table("HIGH VOLUME CRYPTO (24x7)", crypto_list, is_crypto=True), unsafe_allow_html=True)
