@@ -341,17 +341,34 @@ def live_market_board():
         "METALS": ["TATASTEEL", "HINDALCO", "JSWSTEEL", "VEDL", "NMDC"]
     }
     
+    hot_buys = []
+    hot_sells = []
+    
     def build_table(sector_name, stocks, is_crypto=False):
         rows_html = ""
         buy_count, sell_count, total = 0, 0, 0
         for s in stocks:
             d = get_terminal_data(s)
             if d: 
+                # 🧠 ML Data Integration
+                df = d['Data']
+                ml_sig, ml_conf, ml_col = get_ml_prediction(df)
+                
+                d['ML_Signal'] = ml_sig.replace("PRO AI: ", "")
+                d['ML_Conf'] = ml_conf
+                d['ML_Color'] = ml_col
+
                 total += 1
-                if d['Signal'] == 'BUY': buy_count += 1
-                elif d['Signal'] == 'SELL': sell_count += 1
-                live_context_data.append(f"{d['Symbol']}: {d['Price']} ({d['Signal']}, RSI:{d['RSI']})")
-                rows_html += f"<tr><td style='color:#ffffff; font-weight:bold;'>{d['Symbol']}</td><td>{d['Currency']}{d['Price']}</td><td><span class='action-badge {d['Class']}'>{d['Signal']}</span></td></tr>"
+                if "BUY" in ml_sig or "ACCUMULATION" in ml_sig: 
+                    buy_count += 1
+                    if "STRONG BUY" in ml_sig: hot_buys.append(d) 
+                elif "SELL" in ml_sig: 
+                    sell_count += 1
+                    if "STRONG SELL" in ml_sig: hot_sells.append(d)
+                    
+                live_context_data.append(f"{d['Symbol']}: {d['Price']} ({ml_sig})")
+                
+                rows_html += f"<tr><td style='color:#ffffff; font-weight:bold;'>{d['Symbol']}</td><td>{d['Currency']}{d['Price']}</td><td><span style='color:{ml_col}; font-weight:bold; font-family: Orbitron; font-size:0.75em;'>{d['ML_Signal']}</span></td></tr>"
         
         summary_html = f"<span class='sector-summary'>(કુલ: {total}) | <span class='s-buy'>B: {buy_count}</span> | <span class='s-sell'>S: {sell_count}</span></span>"
         header_class = "crypto-header" if is_crypto else "sector-header"
@@ -361,6 +378,26 @@ def live_market_board():
         return html
 
     sectors = list(fo_sectors.items())
+    
+    # ==========================================
+    # 🔥 AI ACTION RADAR (GRAPHICAL LIST)
+    # ==========================================
+    st.markdown("<h4 style='font-family: Orbitron; color: #fff; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;'>⚡ PRO AI ACTION RADAR</h4>", unsafe_allow_html=True)
+    
+    radar_html = "<div style='display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 15px;'>"
+    
+    for b in hot_buys[:5]: 
+        radar_html += f"<div style='min-width: 150px; background: linear-gradient(145deg, rgba(0,255,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #00ff00; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,255,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{b['Symbol']}</div><div style='color: #00ff00; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{b['Price']}</div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{b['ML_Conf']}</div><div style='background: {b['ML_Color']}; color: #000; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{b['ML_Signal']}</div></div>"
+        
+    for s in hot_sells[:5]: 
+        radar_html += f"<div style='min-width: 150px; background: linear-gradient(145deg, rgba(255,0,0,0.1), rgba(0,0,0,0.8)); border: 1px solid #ff0000; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(255,0,0,0.2);'><div style='font-family: Orbitron; font-weight: bold; color: #fff; font-size: 1.1em;'>{s['Symbol']}</div><div style='color: #ff4b4b; font-family: Roboto Mono; font-size: 1.2em; margin: 5px 0;'>₹{s['Price']}</div><div style='font-size: 0.7em; color: #888; margin-bottom: 5px;'>{s['ML_Conf']}</div><div style='background: {s['ML_Color']}; color: #fff; font-family: Orbitron; font-weight: bold; font-size: 0.75em; padding: 4px; border-radius: 4px;'>{s['ML_Signal']}</div></div>"
+        
+    if not hot_buys and not hot_sells:
+        radar_html += "<div style='color: #888; font-family: Roboto Mono; font-size: 0.9em; padding: 10px;'>અત્યારે કોઈ ક્લિયર ટ્રેન્ડ નથી. AI સ્કેન કરી રહ્યું છે...</div>"
+        
+    radar_html += "</div>"
+    st.markdown(radar_html, unsafe_allow_html=True)
+    
     half = len(sectors) // 2
     grid_html = "<div class='radar-grid'><div>"
     for name, stocks in sectors[:half]: grid_html += build_table(name, stocks)
