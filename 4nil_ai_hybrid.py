@@ -333,7 +333,8 @@ with st.sidebar:
     st.markdown("""<div class="founders-badge"><p>Developed & Managed By</p><h3>NILESH SHAH</h3><h3>VASVI SENGUPTA</h3></div>""", unsafe_allow_html=True)
     st.markdown("<div class='live-badge'>🟢 TRUE AI SMART ENGINE <br><small>10 SEC SYNC | V7.0</small></div>", unsafe_allow_html=True)
 
-left, right = st.columns([2, 1])
+# 🌟 Layout Improvement: બંને ભાગ વચ્ચે 'large' ગેપ અને ડાબો ભાગ 2.2 ગણો મોટો કર્યો 
+left, right = st.columns([2.2, 1], gap="large")
 
 @st.fragment(run_every=10)
 def live_market_board():
@@ -377,32 +378,26 @@ def live_market_board():
                 cp = d['Price']
                 ml_sig, ml_conf, ml_col, ml_tg, ml_sl = get_ml_prediction(df)
                 
-                # 🛑 TRADE LOCKING & AUTO-EXIT LOGIC
+                # 🛑 TRADE LOCKING, AUTO-EXIT & P&L LOGIC
                 if sym in st.session_state.active_trades:
                     trade = st.session_state.active_trades[sym]
                     ttype = trade['type']
-                    trade['target'] = ml_tg # Dynamic Target Update
+                    trade['target'] = ml_tg
                     
                     if ttype == 'BUY':
-                        if cp >= trade['target']:
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'TARGET 🎯', 'color': '#00ff00'})
-                            del st.session_state.active_trades[sym]
-                        elif cp <= trade['sl']:
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'SL HIT 🔻', 'color': '#ff4b4b'})
-                            del st.session_state.active_trades[sym]
-                        elif "SELL" in ml_sig:
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'result': 'SMART EXIT 🧠', 'color': '#d4af37'})
+                        if cp >= trade['target'] or cp <= trade['sl'] or "SELL" in ml_sig:
+                            pnl = round(cp - trade['entry'], 2) # BUY માટે નફો-નુકસાન
+                            res = 'TARGET 🎯' if cp >= trade['target'] else 'SL HIT 🔻' if cp <= trade['sl'] else 'SMART EXIT 🧠'
+                            col = '#00ff00' if cp >= trade['target'] else '#ff4b4b' if cp <= trade['sl'] else '#d4af37'
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'BUY', 'entry': trade['entry'], 'exit': cp, 'pnl': pnl, 'result': res, 'color': col})
                             del st.session_state.active_trades[sym]
 
                     elif ttype == 'SELL':
-                        if cp <= trade['target']:
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'TARGET 🎯', 'color': '#00ff00'})
-                            del st.session_state.active_trades[sym]
-                        elif cp >= trade['sl']:
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'SL HIT 🔻', 'color': '#ff4b4b'})
-                            del st.session_state.active_trades[sym]
-                        elif "BUY" in ml_sig:
-                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'result': 'SMART EXIT 🧠', 'color': '#d4af37'})
+                        if cp <= trade['target'] or cp >= trade['sl'] or "BUY" in ml_sig:
+                            pnl = round(trade['entry'] - cp, 2) # SELL માટે નફો-નુકસાન
+                            res = 'TARGET 🎯' if cp <= trade['target'] else 'SL HIT 🔻' if cp >= trade['sl'] else 'SMART EXIT 🧠'
+                            col = '#00ff00' if cp <= trade['target'] else '#ff4b4b' if cp >= trade['sl'] else '#d4af37'
+                            st.session_state.trade_history.append({'symbol': sym, 'type': 'SELL', 'entry': trade['entry'], 'exit': cp, 'pnl': pnl, 'result': res, 'color': col})
                             del st.session_state.active_trades[sym]
 
                 is_active = sym in st.session_state.active_trades
@@ -464,16 +459,18 @@ def live_market_board():
     crypto_list = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD', 'XRP-USD']
     st.markdown(build_table("HIGH VOLUME CRYPTO (24x7)", crypto_list, is_crypto=True), unsafe_allow_html=True)
 
-    # 📜 નવું: કાયમી દેખાતી TRADE BOOK
+    # 📜 નવું: કાયમી દેખાતી TRADE BOOK (P&L સાથે)
     st.markdown("<h4 style='font-family: Orbitron; color: #d4af37; margin-top: 25px; border-bottom: 1px solid #444; padding-bottom: 5px;'>📜 TODAY'S CLOSED TRADES (HISTORY)</h4>", unsafe_allow_html=True)
     if st.session_state.trade_history:
-        tb_html = "<div class='glass-card'><table class='f-o-table' style='text-align: center; width: 100%;'><thead><tr><th style='text-align:center;'>STOCK</th><th style='text-align:center;'>TYPE</th><th style='text-align:center;'>ENTRY</th><th style='text-align:center;'>EXIT</th><th style='text-align:center;'>RESULT</th></tr></thead><tbody>"
+        tb_html = "<div class='glass-card'><table class='f-o-table' style='text-align: center; width: 100%;'><thead><tr><th style='text-align:center;'>STOCK</th><th style='text-align:center;'>TYPE</th><th style='text-align:center;'>ENTRY</th><th style='text-align:center;'>EXIT</th><th style='text-align:center;'>RESULT</th><th style='text-align:center;'>P&L (1 Qty)</th></tr></thead><tbody>"
         for th in reversed(st.session_state.trade_history): 
-            tb_html += f"<tr><td style='font-weight:bold; color:#fff;'>{th['symbol']}</td><td>{th['type']}</td><td>₹{th['entry']}</td><td>₹{th['exit']}</td><td><span style='color:{th['color']}; font-weight:bold; font-family:Orbitron;'>{th['result']}</span></td></tr>"
+            pnl_val = th.get('pnl', 0)
+            pnl_col = "#00ff00" if pnl_val >= 0 else "#ff4b4b"
+            pnl_sign = "+" if pnl_val >= 0 else ""
+            tb_html += f"<tr><td style='font-weight:bold; color:#fff;'>{th['symbol']}</td><td>{th['type']}</td><td>₹{th['entry']}</td><td>₹{th['exit']}</td><td><span style='color:{th['color']}; font-weight:bold; font-family:Orbitron;'>{th['result']}</span></td><td style='color:{pnl_col}; font-weight:bold;'>{pnl_sign}₹{pnl_val}</td></tr>"
         tb_html += "</tbody></table></div>"
         st.markdown(tb_html, unsafe_allow_html=True)
     else:
-        # જો ટ્રેડ ના હોય તો આ મેસેજ દેખાશે
         st.markdown("<div style='color: #888; padding: 15px; text-align: center; border: 1px dashed #444; border-radius: 5px; font-family: Roboto Mono;'>હજી સુધી કોઈ ટ્રેડ ક્લોઝ થયો નથી. સિસ્ટમ લાઈવ ટાર્ગેટ અને SL ટ્રેક કરી રહી છે...</div>", unsafe_allow_html=True)
 
 # ----------------- LEFT AND RIGHT COLUMNS -----------------
