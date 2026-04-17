@@ -121,10 +121,7 @@ def create_interactive_chart(df, symbol):
     return fig
 
 # ==========================================
-# ૩.૨ PRO ML PREDICTION ENGINE (Smart Money + Non-Linear)
-# ==========================================
-# ==========================================
-# ૩.૨ PRO ML PREDICTION ENGINE (Dynamic ML Targets)
+# ૩.૨ PRO ML PREDICTION ENGINE (80% STRICT FILTER)
 # ==========================================
 def get_ml_prediction(df):
     try:
@@ -143,8 +140,6 @@ def get_ml_prediction(df):
         
         df['Momentum_10'] = df['Close'] - df['Close'].shift(10)
         df['Acceleration'] = df['Momentum_10'] - df['Momentum_10'].shift(10)
-        
-        # 🧠 નવું: ATR (વોલેટિલિટી માપવા માટે)
         df['ATR'] = (df['High'] - df['Low']).rolling(14).mean()
         
         latest_row = df.iloc[-1]
@@ -157,31 +152,41 @@ def get_ml_prediction(df):
         knn_pred = knn_model.predict(latest_scaled)[0]
         xgb_pred = xgb_model.predict(latest_scaled)[0]
         
-        # 🎯 મશીન લર્નિંગ ડાયનેમિક ટાર્ગેટ અને SL ની ગણતરી
         xgb_proba = xgb_model.predict_proba(latest_scaled)[0]
-        confidence = max(xgb_proba) # મોડેલ કેટલું સ્યોર છે? (દા.ત. 0.85 એટલે 85%)
+        confidence = max(xgb_proba) # 🧠 AI ની સ્યોરિટી (0.0 થી 1.0 ની વચ્ચે)
         
         current_price = latest_row['Close']
         atr = latest_row['ATR'] if not pd.isna(latest_row['ATR']) else (current_price * 0.015)
         
-        # લોજિક: મોડેલ વધુ સ્યોર હોય અને માર્કેટ ફાસ્ટ હોય, તો ટાર્ગેટ મોટો મળશે
         ml_target_dist = atr * (confidence * 3.5) * latest_row['Volatility_Ratio']
         ml_sl_dist = atr * 1.5
         
+        # 🛑 80% STRICT CONFIDENCE FILTER 🛑
         if knn_pred == 1 and xgb_pred == 1:
-            sig, msg, col = "PRO AI: STRONG BUY 🚀", f"ML Conf: {int(confidence*100)}% (Vol+Mom)", "#00ff00"
-            tg, sl = current_price + ml_target_dist, current_price - ml_sl_dist
+            if confidence >= 0.80: # જો 80% કે તેનાથી વધુ સ્યોર હોય તો જ એન્ટ્રી
+                sig, msg, col = "PRO AI: STRONG BUY 🚀", f"ML Conf: {int(confidence*100)}% (80%+ Verified)", "#00ff00"
+                tg, sl = current_price + ml_target_dist, current_price - ml_sl_dist
+            else: # નહિતર ખાલી વોચલિસ્ટમાં બતાવશે, ટ્રેડ નહિ લે
+                sig, msg, col = "PRO AI: ACCUMULATION 🔼", f"ML Conf: {int(confidence*100)}% (Need 80% to Trade)", "#d4af37"
+                tg, sl = current_price + (ml_target_dist*0.5), current_price - ml_sl_dist
+                
         elif knn_pred == 0 and xgb_pred == 0:
-            sig, msg, col = "PRO AI: STRONG SELL 🔻", f"ML Conf: {int(confidence*100)}% (Dist)", "#ff0000"
-            tg, sl = current_price - ml_target_dist, current_price + ml_sl_dist
+            if confidence >= 0.80: # જો 80% કે તેનાથી વધુ સ્યોર હોય તો જ એન્ટ્રી
+                sig, msg, col = "PRO AI: STRONG SELL 🔻", f"ML Conf: {int(confidence*100)}% (80%+ Verified)", "#ff0000"
+                tg, sl = current_price - ml_target_dist, current_price + ml_sl_dist
+            else: # નહિતર ટ્રેડ નહિ લે
+                sig, msg, col = "PRO AI: WEAK SELL 🔽", f"ML Conf: {int(confidence*100)}% (Need 80% to Trade)", "#ff8800"
+                tg, sl = current_price - (ml_target_dist*0.5), current_price + ml_sl_dist
+                
         elif knn_pred == 1 and xgb_pred == 0:
-            sig, msg, col = "PRO AI: ACCUMULATION 🔼", "KNN Bullish Base", "#d4af37"
+            sig, msg, col = "PRO AI: WAIT ⏳", f"ML Conf: {int(confidence*100)}% (Mixed Signals)", "#888888"
             tg, sl = current_price + (ml_target_dist*0.5), current_price - ml_sl_dist
+            
         else:
-            sig, msg, col = "PRO AI: WEAK SELL 🔽", "XGB Bearish Pressure", "#ff8800"
+            sig, msg, col = "PRO AI: WAIT ⏳", f"ML Conf: {int(confidence*100)}% (Mixed Signals)", "#888888"
             tg, sl = current_price - (ml_target_dist*0.5), current_price + ml_sl_dist
             
-        return sig, msg, col, round(tg, 2), round(sl, 2) # હવે 5 વસ્તુઓ રિટર્ન કરશે
+        return sig, msg, col, round(tg, 2), round(sl, 2)
         
     except Exception as e:
         return "PRO AI SYSTEM OFFLINE", f"Error: {str(e)[:20]}", "#888888", 0, 0
