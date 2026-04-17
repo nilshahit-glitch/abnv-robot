@@ -123,14 +123,15 @@ def create_interactive_chart(df, symbol):
 # ==========================================
 # ૩.૨ PRO ML PREDICTION ENGINE (Smart Money + Non-Linear)
 # ==========================================
+# ==========================================
+# ૩.૨ PRO ML PREDICTION ENGINE (Dynamic ML Targets)
+# ==========================================
 def get_ml_prediction(df):
     try:
-        # ૧. PRO મોડેલ અને સ્કેલર લોડ કરો
         scaler = joblib.load('abnv_pro_scaler.pkl')
         knn_model = joblib.load('abnv_pro_knn.pkl')
         xgb_model = joblib.load('abnv_pro_xgb.pkl')
         
-        # ૨. લાઈવ ડેટા પર એડવાન્સ ગણિત (Feature Engineering)
         df = df.copy()
         df['Log_Return'] = np.log(df['Close'] / df['Close'].shift(1))
         df['VPT'] = df['Volume'] * df['Log_Return']
@@ -143,29 +144,47 @@ def get_ml_prediction(df):
         df['Momentum_10'] = df['Close'] - df['Close'].shift(10)
         df['Acceleration'] = df['Momentum_10'] - df['Momentum_10'].shift(10)
         
-        # છેલ્લી લાઈવ કેન્ડલનો ડેટા ખેંચો
-        latest_data = df[['Log_Return', 'VPT_EMA', 'Volatility_Ratio', 'Momentum_10', 'Acceleration']].iloc[-1].values.reshape(1, -1)
+        # 🧠 નવું: ATR (વોલેટિલિટી માપવા માટે)
+        df['ATR'] = (df['High'] - df['Low']).rolling(14).mean()
+        
+        latest_row = df.iloc[-1]
+        latest_data = latest_row[['Log_Return', 'VPT_EMA', 'Volatility_Ratio', 'Momentum_10', 'Acceleration']].values.reshape(1, -1)
         
         if np.isnan(latest_data).any():
-            return "PRO AI: WAITING ⏳", "Processing Deep Market Data...", "#888888"
+            return "PRO AI: WAITING ⏳", "Processing Deep Market Data...", "#888888", 0, 0
             
-        # ૩. ડેટા સ્કેલિંગ અને પાવરફુલ પ્રેડિક્શન
         latest_scaled = scaler.transform(latest_data)
         knn_pred = knn_model.predict(latest_scaled)[0]
         xgb_pred = xgb_model.predict(latest_scaled)[0]
         
-        # ૪. INSTITUTIONAL CONFLUENCE LOGIC (ફાઇનલ ડિસિઝન)
+        # 🎯 મશીન લર્નિંગ ડાયનેમિક ટાર્ગેટ અને SL ની ગણતરી
+        xgb_proba = xgb_model.predict_proba(latest_scaled)[0]
+        confidence = max(xgb_proba) # મોડેલ કેટલું સ્યોર છે? (દા.ત. 0.85 એટલે 85%)
+        
+        current_price = latest_row['Close']
+        atr = latest_row['ATR'] if not pd.isna(latest_row['ATR']) else (current_price * 0.015)
+        
+        # લોજિક: મોડેલ વધુ સ્યોર હોય અને માર્કેટ ફાસ્ટ હોય, તો ટાર્ગેટ મોટો મળશે
+        ml_target_dist = atr * (confidence * 3.5) * latest_row['Volatility_Ratio']
+        ml_sl_dist = atr * 1.5
+        
         if knn_pred == 1 and xgb_pred == 1:
-            return "PRO AI: STRONG BUY 🚀", "Smart Money + Momentum Confirmed", "#00ff00"
+            sig, msg, col = "PRO AI: STRONG BUY 🚀", f"ML Conf: {int(confidence*100)}% (Vol+Mom)", "#00ff00"
+            tg, sl = current_price + ml_target_dist, current_price - ml_sl_dist
         elif knn_pred == 0 and xgb_pred == 0:
-            return "PRO AI: STRONG SELL 🔻", "Distribution & Down Trend", "#ff0000"
+            sig, msg, col = "PRO AI: STRONG SELL 🔻", f"ML Conf: {int(confidence*100)}% (Dist)", "#ff0000"
+            tg, sl = current_price - ml_target_dist, current_price + ml_sl_dist
         elif knn_pred == 1 and xgb_pred == 0:
-            return "PRO AI: ACCUMULATION 🔼", "Smart Money Buying (KNN Bullish)", "#d4af37" # ગોલ્ડન કલર
+            sig, msg, col = "PRO AI: ACCUMULATION 🔼", "KNN Bullish Base", "#d4af37"
+            tg, sl = current_price + (ml_target_dist*0.5), current_price - ml_sl_dist
         else:
-            return "PRO AI: WEAK SELL 🔽", "Momentum Fading (XGB Bearish)", "#ff8800" # ઓરેન્જ કલર
+            sig, msg, col = "PRO AI: WEAK SELL 🔽", "XGB Bearish Pressure", "#ff8800"
+            tg, sl = current_price - (ml_target_dist*0.5), current_price + ml_sl_dist
             
+        return sig, msg, col, round(tg, 2), round(sl, 2) # હવે 5 વસ્તુઓ રિટર્ન કરશે
+        
     except Exception as e:
-        return "PRO AI SYSTEM OFFLINE", f"Error: {str(e)[:20]}", "#888888"
+        return "PRO AI SYSTEM OFFLINE", f"Error: {str(e)[:20]}", "#888888", 0, 0
     
 # ==========================================
 # ૩.૨ ગ્લાસ UI સ્ટાઈલ
@@ -350,20 +369,28 @@ def live_market_board():
         for s in stocks:
             d = get_terminal_data(s)
             if d: 
-                # 🧠 ML Data Integration
                 df = d['Data']
-                ml_sig, ml_conf, ml_col = get_ml_prediction(df)
+                # 🧠 હવે ડાયરેક્ટ મશીન લર્નિંગમાંથી જ Target અને SL આવશે
+                ml_sig, ml_conf, ml_col, ml_tg, ml_sl = get_ml_prediction(df)
                 
                 d['ML_Signal'] = ml_sig.replace("PRO AI: ", "")
                 d['ML_Conf'] = ml_conf
                 d['ML_Color'] = ml_col
 
                 total += 1
+                
                 if "BUY" in ml_sig or "ACCUMULATION" in ml_sig: 
                     buy_count += 1
+                    d['Entry'] = d['Price']
+                    d['SL'] = ml_sl        # AI એ જાતે ગણેલો SL
+                    d['Target'] = ml_tg    # AI એ જાતે ગણેલો Target
                     if "STRONG BUY" in ml_sig: hot_buys.append(d) 
+                
                 elif "SELL" in ml_sig: 
                     sell_count += 1
+                    d['Entry'] = d['Price']
+                    d['SL'] = ml_sl        # AI એ જાતે ગણેલો SL
+                    d['Target'] = ml_tg    # AI એ જાતે ગણેલો Target
                     if "STRONG SELL" in ml_sig: hot_sells.append(d)
                     
                 live_context_data.append(f"{d['Symbol']}: {d['Price']} ({ml_sig})")
